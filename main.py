@@ -18,6 +18,9 @@ class User(BaseModel):
     email: Optional[str]=None
     password: str
 
+class Username(BaseModel):
+    username: str
+
 
 USER_POOL_ID = os.environ['USER_POOL_ID']
 
@@ -169,5 +172,25 @@ async def create_user(group:str, payload:User, Authorization: Annotated[str | No
     return response
 
 
+@app.post("/deleteUser/")
+async def delete_user(payload:Username, Authorization: Annotated[str | None, Header()] = None):
+    claims = auth(Authorization)
+
+    user_group = claims['cognito:groups'][0]
+    
+    response = client.list_users_in_group(UserPoolId=USER_POOL_ID, GroupName=user_group)
+    users = [user['Username'] for user in response['Users']]
+    if (payload.username in users) or (user_group == 'admin'):
+        try:
+           response = client.admin_delete_user(
+                        UserPoolId=USER_POOL_ID,
+                        Username=payload.username
+            )
+        except Exception as err :
+            raise HTTPException(status_code=400,detail=str(err))
+    else:
+        raise HTTPException(status_code=401,detail='not allowed')
+
+    return response
 
 handler = Mangum(app=app)
