@@ -1,0 +1,9 @@
+requests
+PyJWT
+cryptography
+boto3
+fastapi
+uvicorn
+boto3
+mangum
+pydantic
