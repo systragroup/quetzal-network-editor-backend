@@ -53,7 +53,6 @@ def read_root():
 @app.get("/buckets/")
 async def get_buckets(Authorization: Annotated[str | None, Header()] = None):
     claims = auth(Authorization)
-    print(claims)
     try:
         role_arn = claims['cognito:roles'][0]
     except Exception as err:
@@ -73,7 +72,7 @@ async def get_buckets(Authorization: Annotated[str | None, Header()] = None):
                 s3_policies.append(policy[1]['Resource'])
     #remove arn:aws:s3::: and /*
     buckets = [pol[13:-2] for pol in s3_policies]
-    buckets = [bucket for bucket in buckets if bucket not in ['quenedi-osm','quetzal-config']]
+    buckets = [bucket for bucket in buckets if bucket not in ['quenedi-osm','quetzal-config','quetzal-api-bucket']]
     buckets.sort()
     return buckets
 

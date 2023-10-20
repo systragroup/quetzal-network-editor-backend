@@ -40,12 +40,9 @@ def verify_cognito_token(token):
 def auth(token):
     try:
         claims = verify_cognito_token(token)
-        print('Token is valid:', claims)
     except jwt.ExpiredSignatureError:
-          print(1)
           raise HTTPException(status_code=401,detail='Token has expired')
     except Exception as e:
-        print(2)
         raise HTTPException(status_code=401,detail=f'Token validation failed: {e}')
     return claims
 
