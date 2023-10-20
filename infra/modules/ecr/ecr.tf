@@ -31,7 +31,6 @@ resource "null_resource" "docker_packaging" {
       docker push ${aws_ecr_repository.repository.repository_url}:DUMMY
       EOF
   }
-	
 
 	  depends_on = [
 	    aws_ecr_repository.repository,
