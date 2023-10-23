@@ -1,8 +1,8 @@
 
 
 
-declare AWS_ECR_REPO_NAME=quetzal-api-cognito
-declare AWS_LAMBDA_FUNCTION_NAME=quetzal-api-cognito
+declare AWS_ECR_REPO_NAME=quetzal-cognito-api
+declare AWS_LAMBDA_FUNCTION_NAME=quetzal-cognito-api
 
 # Prompt user for a tag
 last_tag=$(aws ecr describe-images --repository-name $AWS_ECR_REPO_NAME \

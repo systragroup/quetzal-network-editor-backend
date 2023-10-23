@@ -1,8 +1,23 @@
 variable "aws_region" {
-  description = "Deployment region (e.g.: ca-central-1)."
+  description = "set in env.tfvars. Deployment region (e.g.: ca-central-1)"
   type        = string
   default     = "ca-central-1"
 }
+
+variable "app_client_id" {
+  description = "set in env.tfvars. cognito app client id"
+  type        = string
+  default     = ""
+}
+
+variable "user_pool_id" {
+  description = "set in env.tfvars. cognito user pool id"
+  type        = string
+  default     = ""
+}
+
+
+
 
 variable "bucket_name" {
   description = "Name for S3 bucket and lambda function"
@@ -26,6 +41,10 @@ locals {
   matrixroadcaster_api_tags = {
     "cost:project" : "quetzal",
     "cost:name" : "${var.matrixroadcaster_api_name}"
+  }
+  cognito_api_tags = {
+    "cost:project" : "quetzal",
+    "cost:name" : "${var.cognito_api_name}"
   }
 }
 
@@ -219,4 +238,34 @@ variable "matrixroadcaster_api_state_machine" {
       }
     }
     EOF
+}
+
+
+# =========
+# cognito API
+# =========
+
+
+variable "cognito_api_name" {
+  description = "Name of the cognito api"
+  type        = string
+  default     = "quetzal-cognito-api"
+}
+
+variable "cognito_api_memory_size" {
+  description = "Lambda function ram in mb"
+  default     = 384
+  type        = number
+}
+
+variable "cognito_api_time_limit" {
+  description = "Lambda function time limit in seconds"
+  default     = 10
+  type        = number
+}
+
+variable "cognito_api_storage_size" {
+  description = "Lambda function ephemeral storage size in mb"
+  default     = 512
+  type        = number
 }

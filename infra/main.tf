@@ -127,3 +127,29 @@ module "step_function-matrixroadcaster" {
     lambda_function_name = var.matrixroadcaster_api_name
     tags = local.matrixroadcaster_api_tags 
 }
+
+
+# =========
+# cognito API
+# =========
+module "ecr-cognito" {
+    source = "./modules/ecr"
+    repo_name = var.cognito_api_name
+    tags = local.cognito_api_tags     
+}
+
+# create CloudWatch group, lambda function, IAM role and policy for the lambda function. use dummy image.
+module "lambda-cognito" {
+    source = "./modules/lambda_cognito"
+    depends_on = [module.ecr-cognito]
+    function_name = var.cognito_api_name
+    ecr_repo_name = var.cognito_api_name  
+    region = var.aws_region
+    app_client_id = var.app_client_id
+    user_pool_id = var.user_pool_id
+    role_name = "lambda-${var.cognito_api_name}-role"
+    tags = local.cognito_api_tags
+    memory_size = var.cognito_api_memory_size
+    time_limit = var.cognito_api_time_limit
+    storage_size  = var.cognito_api_storage_size
+}
