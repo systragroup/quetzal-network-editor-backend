@@ -1,3 +1,2 @@
-aws_region      = ""
-app_client_id   = ""
-user_pool_id    = ""
+U2FsdGVkX1+v5qIUW7B6az2xEuROmz/a1HhZKIJxZICey74FWh4QHJsOedkTtOv+
+3xvvlF1mWDQ5ahAFioVY1MNvv0P3KlA0dMUFPTA342A=
