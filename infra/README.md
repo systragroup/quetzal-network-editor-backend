@@ -23,7 +23,7 @@ This file contain this information.
  terraform plan -var-file="environments/env.tfvars"
 ```
 
-3 **plan**
+3 **apply**
 
 ```bash
  terraform apply -var-file="environments/env.tfvars"
