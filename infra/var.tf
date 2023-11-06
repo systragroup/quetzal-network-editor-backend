@@ -60,7 +60,7 @@ variable "gtfs_api_name" {
 
 variable "gtfs_api_memory_size" {
   description = "Lambda function ram in mb"
-  default     = 5120
+  default     = 5308
   type        = number
 }
 
@@ -72,7 +72,7 @@ variable "gtfs_api_time_limit" {
 
 variable "gtfs_api_storage_size" {
   description = "Lambda function ephemeral storage size in mb"
-  default     = 512
+  default     = 5120
   type        = number
 }
 
