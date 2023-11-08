@@ -6,7 +6,7 @@ This repo have the infrastructre for
  * Quetzal-matrixroadcaster-api
  * Quetzal-cognito-api
 
-TODO: auth lambda function (folder auth. that is used in quetzal model step function definition for authorization step.)
+TODO: add quetzal-api-auth (folder auth. that is used in quetzal model step function definition for authorization step.)
  1 **Unlock env.tfvars**
 
 ```bash

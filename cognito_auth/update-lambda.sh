@@ -4,12 +4,24 @@
 declare AWS_ECR_REPO_NAME=quetzal-cognito-api
 declare AWS_LAMBDA_FUNCTION_NAME=quetzal-cognito-api
 
+declare DOCKER_IMAGE="public.ecr.aws/lambda/python:3.11"
+
 # Prompt user for a tag
 last_tag=$(aws ecr describe-images --repository-name $AWS_ECR_REPO_NAME \
     --query 'sort_by(imageDetails,& imagePushedAt)[-1].imageTags[0]')
 
 echo "Enter a docker TAG (last: $last_tag)":
 read TAG
+
+LOCAL_IMAGE_ID=$(docker images -q $DOCKER_IMAGE)
+
+if [ -z "$LOCAL_IMAGE_ID" ]; then
+  echo "Image not found locally. Pulling the latest version."
+  docker pull $DOCKER_IMAGE
+else
+  echo "Local image found. Using the cached version."
+fi
+
 
 
 # Build docker image
