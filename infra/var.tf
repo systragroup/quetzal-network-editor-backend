@@ -93,17 +93,24 @@ variable "gtfs_api_state_machine" {
             "FunctionName": "arn:aws:lambda:ca-central-1:142023388927:function:quetzal-gtfs-api:$LATEST"
           },
           "Retry": [
-            {
-              "ErrorEquals": [
-                "Lambda.ServiceException",
-                "Lambda.AWSLambdaException",
-                "Lambda.SdkClientException",
-                "Lambda.TooManyRequestsException"
-              ],
-              "IntervalSeconds": 2,
-              "MaxAttempts": 6,
-              "BackoffRate": 2
-            }
+          {
+            "ErrorEquals": [
+              "Lambda.ServiceException",
+              "Lambda.SdkClientException",
+              "Lambda.TooManyRequestsException"
+            ],
+            "IntervalSeconds": 2,
+            "MaxAttempts": 2,
+            "BackoffRate": 2
+          },
+          {
+            "ErrorEquals": [
+              "Lambda.AWSLambdaException"
+            ],
+            "IntervalSeconds": 30,
+            "MaxAttempts": 4,
+            "BackoffRate": 2
+          }
           ],
           "End": true
         }
@@ -160,12 +167,19 @@ variable "osm_api_state_machine" {
             {
               "ErrorEquals": [
                 "Lambda.ServiceException",
-                "Lambda.AWSLambdaException",
                 "Lambda.SdkClientException",
                 "Lambda.TooManyRequestsException"
               ],
               "IntervalSeconds": 2,
-              "MaxAttempts": 6,
+              "MaxAttempts": 2,
+              "BackoffRate": 2
+            },
+            {
+              "ErrorEquals": [
+                "Lambda.AWSLambdaException"
+              ],
+              "IntervalSeconds": 30,
+              "MaxAttempts": 4,
               "BackoffRate": 2
             }
           ],
@@ -224,12 +238,19 @@ variable "matrixroadcaster_api_state_machine" {
             {
               "ErrorEquals": [
                 "Lambda.ServiceException",
-                "Lambda.AWSLambdaException",
                 "Lambda.SdkClientException",
                 "Lambda.TooManyRequestsException"
               ],
               "IntervalSeconds": 2,
-              "MaxAttempts": 6,
+              "MaxAttempts": 2,
+              "BackoffRate": 2
+            },
+            {
+              "ErrorEquals": [
+                "Lambda.AWSLambdaException"
+              ],
+              "IntervalSeconds": 30,
+              "MaxAttempts": 4,
               "BackoffRate": 2
             }
           ],
