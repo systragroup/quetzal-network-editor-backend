@@ -5,7 +5,7 @@ from fastapi import  FastAPI, HTTPException, Header, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import boto3
-from auth import auth, get_policies_from_role
+from auth import auth, get_policies_from_role, get_inline_policies_from_role
 from typing import Optional, Annotated
 
 
@@ -62,6 +62,13 @@ async def get_buckets(Authorization: Annotated[str | None, Header()] = None):
         policies = get_policies_from_role(role_name)
     except Exception as e:
         raise Exception('error listing role policies:', e)
+    try:
+        inline_policies = get_inline_policies_from_role(role_name)
+        policies.extend(inline_policies)
+    except Exception as e:
+        raise Exception('error listing role inline policies:', e)
+
+
     # get a list of all s3 buckets access ['arn:aws:s3:::quetzal-test/*, ...]
     s3_policies = []
     for policy in policies:

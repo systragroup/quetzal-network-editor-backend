@@ -49,7 +49,9 @@ data "aws_iam_policy_document" "iam_policy" {
         actions= [
             "iam:GetPolicyVersion",
 			"iam:GetPolicy",
-			"iam:ListAttachedRolePolicies"
+            "iam:GetRolePolicy",
+			"iam:ListAttachedRolePolicies",
+            "iam:ListRolePolicies"
         ]
         resources= ["*"]
     }
