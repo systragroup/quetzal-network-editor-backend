@@ -67,6 +67,24 @@ def get_policies_from_role(role_name):
         policies.append(res)
     return policies
 
+def get_inline_policies_from_role(role_name):
+
+    response = iam_client.list_role_policies(RoleName=role_name)
+
+    attached_policies = response['PolicyNames']
+    policies = []
+    for name in attached_policies:
+        res = get_inline_policy_document(name, role_name)
+        policies.append(res)
+    return policies
+    
+def get_inline_policy_document(policy_name, role_name):
+    policy = iam_client.get_role_policy(
+                    RoleName=role_name,
+                    PolicyName=policy_name
+                    )
+    return policy['PolicyDocument']['Statement']
+
 def handler(event, context):
     print("event")
     print(event)
@@ -97,6 +115,13 @@ def handler(event, context):
         policies = get_policies_from_role(role_name)
     except Exception as e:
         raise Exception('error listing role policies:', e)
+    
+    try:
+        inline_policies = get_inline_policies_from_role(role_name)
+        policies.extend(inline_policies)
+    except Exception as e:
+        raise Exception('error listing role inline policies:', e)
+    
     for policy in policies:
         print(policy[1]['Resource'])
         if (policy[1]['Effect'] == 'Allow') and (model in str(policy[1]['Resource'])):
