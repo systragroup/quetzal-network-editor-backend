@@ -40,6 +40,13 @@ resource "aws_iam_role_policy" "cognito_policy" {
   policy = data.aws_iam_policy_document.cognito_policy.json
 }
 
+# 7) create inline policy with cognito admin role
+resource "aws_iam_role_policy" "sfn_policy" {
+  name = "SFNADMIN${var.function_name}"
+  role = aws_iam_role.iam_for_lambda.name
+  policy = data.aws_iam_policy_document.sfn_policy.json
+}
+
 
 # 6) create the Lambda function with dummy image from ECR
 resource "aws_lambda_function" "cognito_lambda" {

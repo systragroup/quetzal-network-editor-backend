@@ -200,4 +200,27 @@ async def delete_user(payload:Username, Authorization: Annotated[str | None, Hea
 
     return response
 
+
+@app.post("/model/running/{stateMachineArn}/{scenario_path_S3}/")
+async def list_groups(stateMachineArn: str, scenario_path_S3:str):
+    # this function check if a scenario_path_s3 is in the list of running execARN for a stateMachine
+    # running this in fastAPI as we dont want to expose every inputs of every Model.
+    import json
+    scenario_path_S3 = scenario_path_S3.strip('/')
+    sf_client = boto3.client("stepfunctions")
+    execution_list = sf_client.list_executions(stateMachineArn=stateMachineArn,statusFilter='RUNNING')['executions']
+    # return arn if its in the running list. else return ''
+    for execution in execution_list:
+        arn = execution['executionArn']
+        resp = sf_client.describe_execution(executionArn=arn)
+        scen = json.loads(resp['input'])['scenario_path_S3'].strip('/')
+        if scenario_path_S3 == scen:
+            return arn
+    else:
+        return ''
+# note: could be get /model/status/ and we return the status (not just running)
+# but this could be long  sf_client.list_executions return 100 last. we dont want to check everything:
+# we would need to describe every exec (long time!). we could go dynamoDB. maybe a function that sync it
+# to step function (lambda trigger that white: model,scenario,execARN,status to dynamo)
+
 handler = Mangum(app=app)

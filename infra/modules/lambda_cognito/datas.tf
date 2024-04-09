@@ -102,3 +102,17 @@ data "aws_iam_policy_document" "cognito_policy" {
         resources= ["arn:aws:cognito-idp:*:142023388927:userpool/*"]
     }
 }
+
+
+# policy to read and write on the s3 bucket
+data "aws_iam_policy_document" "sfn_policy" {
+    version = "2012-10-17"
+	statement	{
+        effect= "Allow"
+        actions= [
+            "states:DescribeExecution",
+            "states:ListExecutions"
+            ]
+        resources= ["*"]
+    }
+}
