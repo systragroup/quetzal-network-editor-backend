@@ -90,4 +90,35 @@ def get_inline_policy_document(policy_name, role_name):
     return policy['PolicyDocument']['Statement']
 
 
+def auth_user(claims, model):
+    '''
+    check if model (bucket) is in the policy allow bucket
+    for now, Microservices are hard coded.
+    '''   
+    role_arn = claims['cognito:roles'][0]
+    role_name = role_arn.split('/')[-1]
+
+    if model in ['quetzal-gtfs-api','quetzal-osm-api','quetzal-matrixroadcaster-api']:
+        return
+
+    try:
+        policies = get_policies_from_role(role_name)
+    except Exception as e:
+        raise Exception('error listing role policies:', e)
+    
+    try:
+        inline_policies = get_inline_policies_from_role(role_name)
+        policies.extend(inline_policies)
+    except Exception as e:
+        raise Exception('error listing role inline policies:', e)
+    
+    for policy in policies:
+       #print(policy[1]['Resource'])
+        if (policy[1]['Effect'] == 'Allow') and (model in str(policy[1]['Resource'])):
+            print('Allowed')
+            break
+
+    else:
+        raise Exception('Access Denied')
+
 #GetRolePolicy

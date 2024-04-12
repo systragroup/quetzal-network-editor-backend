@@ -1,12 +1,12 @@
 
 import os
 from mangum import Mangum
-from fastapi import  FastAPI, HTTPException, Header, Request
+from fastapi import  FastAPI, HTTPException, Header, Request, Body
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import boto3
-from auth import auth, get_policies_from_role, get_inline_policies_from_role
-from typing import Optional, Annotated
+from auth import auth, get_policies_from_role, get_inline_policies_from_role,auth_user
+from typing import Optional, Annotated, Dict
 
 
 from middlewares.exception import ExceptionHandlerMiddleware
@@ -204,6 +204,42 @@ async def delete_user(payload:Username, Authorization: Annotated[str | None, Hea
 
     return response
 
+@app.post("/model/start/")
+async def start_execution(payload: dict=Body(),Authorization: Annotated[str | None, Header()] = None):
+    claims = auth(Authorization)
+    base_arn = 'arn:aws:states:ca-central-1:142023388927:stateMachine:'
+    model = payload['stateMachineArn'].replace(base_arn, '')
+    auth_user(claims,model)
+    #this doesnt work for microservices as stateMachineName !== bucketName
+    sf_client = boto3.client("stepfunctions")
+    resp =  sf_client.start_execution(**payload)
+    return resp
+
+@app.post("/execution/describe/")
+async def describe_execution(payload: dict=Body()):
+    sf_client = boto3.client("stepfunctions")
+    resp =  sf_client.describe_execution(**payload)
+    return resp
+
+@app.post("/execution/abort/")
+async def stop_execution(payload: dict=Body()):
+    sf_client = boto3.client("stepfunctions")
+    resp =  sf_client.stop_execution(**payload)
+    return resp
+
+@app.post("/execution/history/")
+async def get_execution_history(payload: dict=Body()):
+    sf_client = boto3.client("stepfunctions")
+    resp =  sf_client.get_execution_history(**payload)
+    return resp
+
+
+@app.post("/model/describe/")
+async def describe_state_machine(payload: dict=Body()):
+    sf_client = boto3.client("stepfunctions")
+    resp =  sf_client.describe_state_machine(**payload)
+    return resp
+
 
 @app.post("/model/running/{stateMachineArn}/{scenario_path_S3}/")
 async def list_groups(stateMachineArn: str, scenario_path_S3:str):
@@ -228,3 +264,6 @@ async def list_groups(stateMachineArn: str, scenario_path_S3:str):
 # to step function (lambda trigger that white: model,scenario,execARN,status to dynamo)
 
 handler = Mangum(app=app)
+
+
+
