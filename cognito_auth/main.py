@@ -153,6 +153,10 @@ async def create_user(group:str, payload:User, Authorization: Annotated[str | No
                     'Value': payload.email
                 },
                 {
+                    'Name': 'email_verified',
+                    'Value':  'true'
+                },
+                {
                     'Name': 'given_name',
                     'Value': payload.given_name
                 },
