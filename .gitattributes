@@ -1,1 +1,1 @@
-infra/environments/**/* filter=secret diff=secret
+infra/base/environments/**/* filter=secret diff=secret

@@ -1,3 +1,2 @@
-aws_region      = "ca"
-app_client_id   = "4o8n0c"
-user_pool_id    = "4Q"
+U2FsdGVkX1+v5qIUW7B6az2xEuROmz/a1HhZKIJxZIB7ZG0DLyifxxx7LoUjbMJD
+deDlNsaiz9FziWVFqv2BNLrjyYMLdzDYqBUSHqR2upqPZklN0GGYV5cR2sPq6dre
