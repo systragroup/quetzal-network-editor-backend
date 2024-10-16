@@ -46,6 +46,10 @@ locals {
     "cost:project" : "quetzal",
     "cost:name" : "${var.cognito_api_name}"
   }
+  mapmatching_api_tags = {
+    "cost:project" : "quetzal",
+    "cost:name" : "${var.mapmatching_api_name}"
+  }
 }
 
 # =========
@@ -202,7 +206,7 @@ variable "matrixroadcaster_api_name" {
 
 variable "matrixroadcaster_api_memory_size" {
   description = "Lambda function ram in mb"
-  default     = 5120
+  default     = 5308
   type        = number
 }
 
@@ -289,4 +293,80 @@ variable "cognito_api_storage_size" {
   description = "Lambda function ephemeral storage size in mb"
   default     = 512
   type        = number
+}
+
+
+
+# =========
+# MapMatching API
+# =========
+
+variable "mapmatching_api_name" {
+  description = "Name of the MapMatchingapi"
+  type        = string
+  default     = "quetzal-mapmatching-api"
+}
+
+variable "mapmatching_api_memory_size" {
+  description = "Lambda function ram in mb"
+  default     = 10240
+  type        = number
+}
+
+variable "mapmatching_api_time_limit" {
+  description = "Lambda function time limit in seconds"
+  default     = 600
+  type        = number
+}
+
+variable "mapmatching_api_storage_size" {
+  description = "Lambda function ephemeral storage size in mb"
+  default     = 5120
+  type        = number
+}
+
+variable "mapmatching_api_state_machine" {
+  description = "New state machine definition"
+  type        = string
+  default     = <<EOF
+    {
+      "Comment": "step function calling the lambda function",
+      "StartAt": "api call",
+      "States": {
+        "api call": {
+          "Type": "Task",
+          "Resource": "arn:aws:states:::lambda:invoke",
+          "OutputPath": "$.Payload",
+          "Parameters": {
+            "Payload": {
+            "launcher_arg.$": "$.launcher_arg",
+            "test": "32"
+          },
+            "FunctionName": "arn:aws:lambda:ca-central-1:142023388927:function:quetzal-mapmatching-api:$LATEST"
+          },
+          "Retry": [
+          {
+            "ErrorEquals": [
+              "Lambda.ServiceException",
+              "Lambda.SdkClientException",
+              "Lambda.TooManyRequestsException"
+            ],
+            "IntervalSeconds": 2,
+            "MaxAttempts": 2,
+            "BackoffRate": 2
+          },
+          {
+            "ErrorEquals": [
+              "Lambda.AWSLambdaException"
+            ],
+            "IntervalSeconds": 30,
+            "MaxAttempts": 4,
+            "BackoffRate": 2
+          }
+          ],
+          "End": true
+        }
+      }
+    }
+    EOF
 }

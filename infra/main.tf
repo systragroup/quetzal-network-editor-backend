@@ -130,6 +130,43 @@ module "step_function-matrixroadcaster" {
 
 
 # =========
+# Mapmatching API
+# =========
+
+# create ECR isntance with a dummy docker image
+module "ecr-mapmatching" {
+    source = "./modules/ecr"
+    repo_name = var.mapmatching_api_name
+    tags = local.mapmatching_api_tags     
+}
+
+# create CloudWatch group, lambda function, IAM role and policy for the lambda function. use dummy image.
+module "lambda-mapmatching" {
+    source = "./modules/lambda"
+    depends_on = [module.ecr-mapmatching]
+    function_name = var.mapmatching_api_name
+    ecr_repo_name = var.mapmatching_api_name  
+    bucket_name = var.bucket_name
+    role_name = "lambda-${var.mapmatching_api_name}-role"
+    tags = local.mapmatching_api_tags
+    memory_size = var.mapmatching_api_memory_size
+    time_limit = var.mapmatching_api_time_limit
+    storage_size  = var.mapmatching_api_storage_size
+}
+
+# create lambda invoke role (inline policy) and step funtion with  Hello World definition
+module "step_function-mapmatching" {
+    depends_on = [module.lambda-mapmatching]
+    source = "./modules/step_function"
+    step_function_name = var.mapmatching_api_name     
+    state_machine_definition = var.mapmatching_api_state_machine
+    step_function_role_name="sfn-${var.mapmatching_api_name}-role"
+    lambda_function_name = var.mapmatching_api_name
+    tags = local.mapmatching_api_tags 
+}
+
+
+# =========
 # cognito API
 # =========
 module "ecr-cognito" {
