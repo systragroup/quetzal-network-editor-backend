@@ -7,3 +7,5 @@ quetzal/.git
 quetzal/.venv
 quetzal/wheels-cp38-win_amd64
 quetzal/docker/infra
+<model_folder>/scenarios/*   <-- TO EDIT.
+<model_folder>/.git/objects  <-- TO EDIT.

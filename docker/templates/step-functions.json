@@ -8,7 +8,7 @@
       "Parameters": {
         "Payload": {
           "authorization.$": "$.authorization",
-          "model": <model-name>, # TO EDIT.
+          "model": <model_name>, # TO EDIT.
           "choice.$": "$.choice",
           "scenario_path_S3.$": "$.scenario_path_S3",
           "launcher_arg.$": "$.launcher_arg",
@@ -49,7 +49,7 @@
           "launcher_arg.$": "$.launcher_arg",
           "metadata.$": "$.metadata"
         },
-        "FunctionName": "arn:aws:lambda:ca-central-1:142023388927:function:<model-name>"  # TO EDIT
+        "FunctionName": "arn:aws:lambda:ca-central-1:142023388927:function:<model_name>"  # TO EDIT
       },
       "Retry": [
         {
@@ -84,7 +84,7 @@
           "launcher_arg.$": "$.launcher_arg",
           "metadata.$": "$.metadata"
         },
-        "FunctionName": "arn:aws:lambda:ca-central-1:142023388927:function:<model-name>"  # TO EDIT
+        "FunctionName": "arn:aws:lambda:ca-central-1:142023388927:function:<model_name>"  # TO EDIT
       },
       "Retry": [
         {
