@@ -12,7 +12,7 @@ ENV PYTHONPATH="${PYTHONPATH}:${LAMBDA_TASK_ROOT}"
 
 # Copy src code
 COPY ./quetzal ${LAMBDA_TASK_ROOT}/quetzal
-COPY ./quetzal/docker/main.py ${LAMBDA_TASK_ROOT}
+COPY ./quetzal-network-editor-backend/docker/main.py ${LAMBDA_TASK_ROOT}
 COPY ./${QUETZAL_MODEL_NAME} ${LAMBDA_TASK_ROOT}
 
 # Entrypoint
