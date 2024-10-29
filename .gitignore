@@ -5,3 +5,7 @@ infra/models/.terraform/*
 *.tfstate
 *.tfstate.*
 
+# microservices
+services/MapMatching/notebooks/*    
+services/MapMatching/test/*    
+services/MapMatching/test.env
