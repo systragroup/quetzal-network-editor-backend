@@ -21,7 +21,7 @@ resource "aws_sfn_state_machine" "sfn_state_machine" {
   
   lifecycle {
     ignore_changes = [
-      #definition,
+      definition,
       ]
     }
   }
