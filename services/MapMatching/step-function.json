@@ -47,6 +47,7 @@
           "training_folder.$": "$.launcher_arg.training_folder",
           "params": {
             "exclusions.$": "$.launcher_arg.params.exclusions",
+            "keepTime.$":"$.launcher_arg.params.keepTime",
             "SIGMA.$": "$.launcher_arg.params.SIGMA",
             "BETA.$": "$.launcher_arg.params.BETA",
             "POWER.$": "$.launcher_arg.params.POWER",
