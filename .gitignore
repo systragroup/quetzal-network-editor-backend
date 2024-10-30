@@ -1,3 +1,4 @@
+*.ipynb_checkpoints
 # Local .terraform directories
 **/.terraform/*
 infra/base/.terraform/*
@@ -6,6 +7,5 @@ infra/models/.terraform/*
 *.tfstate.*
 
 # microservices
-services/MapMatching/notebooks/*    
-services/MapMatching/test/*    
-services/MapMatching/test.env
+services/MapMatching/scenarios/*    
+

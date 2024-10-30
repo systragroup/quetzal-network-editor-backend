@@ -4,6 +4,7 @@ import json
 import boto3
 import shutil
 import time
+from typing import Dict
 from subprocess import Popen, PIPE, STDOUT
 
 sys.path.insert(0, os.path.abspath('quetzal'))
@@ -123,22 +124,28 @@ def handler(event, context):
     process.wait(timeout=800)
 
     content = process.stdout.read().decode("utf-8")
-
+    
     logfile=os.path.basename(pyfile).replace('.py', '.txt')
     upload_logs_to_s3(bucket_name, event['scenario_path_S3'], logfile, content, metadata=event.get('metadata', {}))
     
     t3 = time.time()
     print('Notebook execution: {} seconds'.format(t3 - t2))
-    print(content)
 
+    print(content)
     # TODO: better parse :
     # if we print 'Error' and there is no end_of_notebook. we will raise an error...
     if 'Error' in content and "end_of_notebook" not in content:
         raise RuntimeError(format_error(content))
     
+
+    # if notebook return some args. add them
+    event = get_return_args(event,content)
     # upload files to S3 (all except inputs)
     os.remove(pyfile)
-    shutil.rmtree('/tmp/inputs')
+    try: # dont upload inputs
+        shutil.rmtree('/tmp/inputs')
+    except:
+        pass
     try: # dont reupload logs.
         shutil.rmtree('/tmp/logs')
     except:
@@ -149,4 +156,28 @@ def handler(event, context):
     print('Upload to S3: {} seconds'.format(t4 - t3))
     print('Total excecution time: {} seconds'.format(t4 - t0))
 
+    return event
+
+def deep_update(mapping: Dict, *updating_mappings) -> Dict:
+    # update a nested dict 
+    # from Pydantic
+    # https://github.com/pydantic/pydantic/blob/fd2991fe6a73819b48c906e3c3274e8e47d0f761/pydantic/utils.py#L200
+    updated_mapping = mapping.copy()
+    for updating_mapping in updating_mappings:
+        for k, v in updating_mapping.items():
+            if k in updated_mapping and isinstance(updated_mapping[k], dict) and isinstance(v, dict):
+                updated_mapping[k] = deep_update(updated_mapping[k], v)
+            else:
+                updated_mapping[k] = v
+    return updated_mapping
+
+def get_return_args(event,content):
+    # in notebook if print("RETURN:", dict) add it to event to the next step function.
+    for line in content.splitlines():
+        if line.startswith("RETURN:"):
+            import ast
+            returned_arg = line[7:]  # Remove "RETURN:" prefix
+            # transform string to dict
+            returned_arg = ast.literal_eval(returned_arg)
+            event = deep_update(event,returned_arg)
     return event

@@ -1,19 +1,24 @@
+# docker build need to be run from folder containing model and quetzal library
 FROM public.ecr.aws/lambda/python:3.12
 
-ENV BACKEND_FOLDER='quetzal-network-editor-backend'
-ARG SERVICE_NAME='./'
-ENV SERVICE_NAME=$SERVICE_NAME
+ARG QUETZAL_MODEL_NAME='./'
+ENV QUETZAL_MODEL_NAME=$QUETZAL_MODEL_NAME
 
+# Install dependancies and add them to paths
+COPY ./${QUETZAL_MODEL_NAME}/requirements.txt .
+RUN pip install -r requirements.txt --target "${LAMBDA_TASK_ROOT}"
+ENV PATH="${PATH}:${LAMBDA_TASK_ROOT}/bin"
+ENV PYTHONPATH="${PYTHONPATH}:${LAMBDA_TASK_ROOT}"
 
-COPY ${BACKEND_FOLDER}/services/${SERVICE_NAME}/requirements.txt ./requirements.txt
-RUN pip install -r ./requirements.txt
+# Copy src code
+COPY ./quetzal ${LAMBDA_TASK_ROOT}/quetzal
+COPY ./quetzal-network-editor-backend/docker/main.py ${LAMBDA_TASK_ROOT}
+COPY ./${QUETZAL_MODEL_NAME} ${LAMBDA_TASK_ROOT}
 
-COPY ./quetzal/quetzal ./quetzal/quetzal
-COPY ./quetzal/syspy ./quetzal/syspy
+# there is no .git as we are in a subfolder:
+# so copy yhe one in quetzal. (therre is dockerignore that delete large file too.)
+# the ipynb to py conversion doesnt work if there is no .git.
+COPY ./quetzal/.git ${LAMBDA_TASK_ROOT}/.git
 
-COPY ${BACKEND_FOLDER}/services/${SERVICE_NAME}/ ./
-
-
-
+# Entrypoint
 CMD ["main.handler"]
-
