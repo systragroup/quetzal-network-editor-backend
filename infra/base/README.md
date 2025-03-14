@@ -1,12 +1,14 @@
 # INFRA (TERRAFORM)
 
 This repo have the infrastructre for
+ * Quetzal-cognito-api
  * Quetzal-osm-api
  * Quetzal-gtfs-api
  * Quetzal-matrixroadcaster-api
- * Quetzal-cognito-api
+ * Quetzal-transit-api
 
-TODO: add quetzal-api-auth (folder auth. that is used in quetzal model step function definition for authorization step.)
+
+
  1 **Unlock env.tfvars**
 
 ```bash

@@ -34,7 +34,7 @@ locals {
     "cost:project" : "quetzal",
     "cost:name" : "${var.gtfs_api_name}"
   }
-   osm_api_tags = {
+  osm_api_tags = {
     "cost:project" : "quetzal",
     "cost:name" : "${var.osm_api_name}"
   }
@@ -49,6 +49,10 @@ locals {
   mapmatching_api_tags = {
     "cost:project" : "quetzal",
     "cost:name" : "${var.mapmatching_api_name}"
+  }
+  transit_api_tags = {
+    "cost:project" : "quetzal",
+    "cost:name" : "${var.transit_api_name}"
   }
 }
 
@@ -343,6 +347,80 @@ variable "mapmatching_api_state_machine" {
             "test": "32"
           },
             "FunctionName": "arn:aws:lambda:ca-central-1:142023388927:function:quetzal-mapmatching-api:$LATEST"
+          },
+          "Retry": [
+          {
+            "ErrorEquals": [
+              "Lambda.ServiceException",
+              "Lambda.SdkClientException",
+              "Lambda.TooManyRequestsException"
+            ],
+            "IntervalSeconds": 2,
+            "MaxAttempts": 2,
+            "BackoffRate": 2
+          },
+          {
+            "ErrorEquals": [
+              "Lambda.AWSLambdaException"
+            ],
+            "IntervalSeconds": 30,
+            "MaxAttempts": 4,
+            "BackoffRate": 2
+          }
+          ],
+          "End": true
+        }
+      }
+    }
+    EOF
+}
+
+# =========
+# Transit API
+# =========
+
+variable "transit_api_name" {
+  description = "Name of the transit"
+  type        = string
+  default     = "quetzal-transit-api"
+}
+
+variable "transit_api_memory_size" {
+  description = "Lambda function ram in mb"
+  default     = 10240
+  type        = number
+}
+
+variable "transit_api_time_limit" {
+  description = "Lambda function time limit in seconds"
+  default     = 600
+  type        = number
+}
+
+variable "transit_api_storage_size" {
+  description = "Lambda function ephemeral storage size in mb"
+  default     = 5120
+  type        = number
+}
+
+variable "transit_api_state_machine" {
+  description = "New state machine definition"
+  type        = string
+  default     = <<EOF
+    {
+      "Comment": "step function calling the lambda function",
+      "StartAt": "api call",
+      "States": {
+        "api call": {
+          "Type": "Task",
+          "Resource": "arn:aws:states:::lambda:invoke",
+          "OutputPath": "$.Payload",
+          "Parameters": {
+            "Payload": {
+            "launcher_arg.$": "$.launcher_arg",
+            "test": "32"
+          },
+            "FunctionName": "arn:aws:lambda:ca-central-1:142023388927:function:quetzal-transit-api:$LATEST"
           },
           "Retry": [
           {
