@@ -52,9 +52,15 @@ resource "aws_lambda_function" "test_lambda" {
     environment {
         variables = {
             BUCKET_NAME = var.bucket_name
+            IMAGE_TAG = "DUMMY"
     }
   }
-
+  
+   lifecycle {
+    ignore_changes = [
+      environment.0.variables["IMAGE_TAG"]
+    ]
+  }
 
     depends_on = [
             aws_iam_role_policy_attachment.lambda_logs,

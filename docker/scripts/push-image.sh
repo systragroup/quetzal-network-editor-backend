@@ -41,4 +41,20 @@ echo "updating lambda function ..."
 
 aws lambda wait function-updated --region $aws_region --function-name $AWS_LAMBDA_FUNCTION_NAME
 
+# Update Lamdba configuration to set tag  
+# Get current environment variables
+existing_env=$(aws lambda get-function-configuration \
+  --function-name "$AWS_LAMBDA_FUNCTION_NAME" \
+  --query 'Environment.Variables' \
+  --output json)
+
+# Fallback to empty object if null
+existing_env=${existing_env:-{}}
+
+updated_env=$(echo "$existing_env" | jq -c --arg TAG "$TAG" '. + {IMAGE_TAG: $TAG}')
+
+aws lambda update-function-configuration \
+  --cli-input-json "$(jq -n --arg fn "$AWS_LAMBDA_FUNCTION_NAME" --argjson vars "$updated_env" \
+    '{FunctionName: $fn, Environment: {Variables: $vars}}')" > /dev/null
+
 echo "success"
