@@ -38,7 +38,9 @@ origins = [
 	'https://systragroup.github.io/quetzal-network-editor/',
 ]
 
-app.add_middleware(CORSMiddleware, allow_origins=origins, allow_credentials=True, allow_methods=['*'], allow_headers=['*'])
+app.add_middleware(
+	CORSMiddleware, allow_origins=origins, allow_credentials=True, allow_methods=['*'], allow_headers=['*']
+)
 
 app.add_middleware(ExceptionHandlerMiddleware)
 
@@ -127,7 +129,9 @@ async def set_password(payload: User, Authorization: Annotated[str | None, Heade
 	users = [user['Username'] for user in response['Users']]
 	if (payload.username in users) or (user_group == 'admin'):
 		try:
-			response = client.admin_set_user_password(UserPoolId=USER_POOL_ID, Username=payload.username, Password=payload.password, Permanent=False)
+			response = client.admin_set_user_password(
+				UserPoolId=USER_POOL_ID, Username=payload.username, Password=payload.password, Permanent=False
+			)
 		except Exception as err:
 			raise HTTPException(status_code=400, detail=str(err))
 	else:
@@ -138,8 +142,6 @@ async def set_password(payload: User, Authorization: Annotated[str | None, Heade
 
 @app.post('/createUser/{group}/')
 async def create_user(group: str, payload: User, Authorization: Annotated[str | None, Header()] = None):
-	print(payload)
-	print(group)
 	claims = auth(Authorization)
 	user_group = claims['cognito:groups'][0]
 	if (user_group != group) and (user_group != 'admin'):
@@ -159,7 +161,9 @@ async def create_user(group: str, payload: User, Authorization: Annotated[str | 
 		)
 		try:
 			## add user to group
-			response = client.admin_add_user_to_group(UserPoolId=USER_POOL_ID, Username=payload.username, GroupName=group)
+			response = client.admin_add_user_to_group(
+				UserPoolId=USER_POOL_ID, Username=payload.username, GroupName=group
+			)
 		except Exception as err:
 			raise HTTPException(status_code=400, detail=str(err))
 
@@ -188,10 +192,14 @@ async def delete_user(payload: Username, Authorization: Annotated[str | None, He
 
 
 @app.post('/model/running/{stateMachineArn}/{scenario_path_S3}/')
-async def list_groups(stateMachineArn: str, scenario_path_S3: str):
+async def list_model_running(
+	stateMachineArn: str, scenario_path_S3: str, Authorization: Annotated[str | None, Header()] = None
+):
 	# this function check if a scenario_path_s3 is in the list of running execARN for a stateMachine
 	# running this in fastAPI as we dont want to expose every inputs of every Model.
 	import json
+
+	auth(Authorization)
 
 	scenario_path_S3 = scenario_path_S3.strip('/')
 	sf_client = boto3.client('stepfunctions')
@@ -206,10 +214,23 @@ async def list_groups(stateMachineArn: str, scenario_path_S3: str):
 	else:
 		return ''
 
+	# note: could be get /model/status/ and we return the status (not just running)
+	# but this could be long  sf_client.list_executions return 100 last. we dont want to check everything:
+	# we would need to describe every exec (long time!). we could go dynamoDB. maybe a function that sync it
+	# to step function (lambda trigger that white: model,scenario,execARN,status to dynamo)
 
-# note: could be get /model/status/ and we return the status (not just running)
-# but this could be long  sf_client.list_executions return 100 last. we dont want to check everything:
-# we would need to describe every exec (long time!). we could go dynamoDB. maybe a function that sync it
-# to step function (lambda trigger that white: model,scenario,execARN,status to dynamo)
+
+@app.get('/model/version/{function_name}/')
+def get_lambda_env_vars(function_name: str, Authorization: Annotated[str | None, Header()] = None):
+	auth(Authorization)
+	lambda_client = boto3.client('lambda')
+	try:
+		response = lambda_client.get_function_configuration(FunctionName=function_name)
+	except lambda_client.exceptions.ResourceNotFoundException:
+		raise HTTPException(status_code=404, detail=f'step function {function_name} not found')
+
+	variables = response.get('Environment', {}).get('Variables', {})
+	return variables.get('IMAGE_TAG', '')
+
 
 handler = Mangum(app=app)
