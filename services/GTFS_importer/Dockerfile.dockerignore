@@ -1,0 +1,12 @@
+__pycache__
+*.ipynb_checkpoints
+*.python-version
+*.md
+*.env
+syspy/surveys
+.venv
+wheels-cp38-win_amd64
+quetzal/.git/lfs
+quetzal/.git/objects
+quetzal-network-editor/services/GTFS_importer/scenarios/
+quetzal-network-editor/services/GTFS_importer/tests/
