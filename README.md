@@ -35,11 +35,23 @@ This repo host all the infrastructure and scripts for:
  to deploy mapmatching. use the update-lambda script in docker/script
  
  ```sh
- /update-lambda.sh quetzal-network-editor-backend/services/MapMatching
+ ./update-lambda.sh quetzal-network-editor-backend/services/MapMatching
  ```
  update Step-function
  ```sh
   python update-function-config.py quetzal-network-editor-backend/services/MapMatching
+ ```
+
+  ## GTFS importer
+ 
+ to deploy. use the update-lambda script in docker/script
+ 
+ ```sh
+ ./update-lambda.sh quetzal-network-editor-backend/services/GTFS_importer
+ ```
+ update Step-function
+ ```sh
+  python update-function-config.py quetzal-network-editor-backend/services/GTFS_importer
  ```
 
 ## Transit 
