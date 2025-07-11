@@ -142,10 +142,11 @@ def handler(event, context):
 		raise RuntimeError(format_error(content))
 
 	# Write model version in info.json
-	if os.environ['IMAGE_TAG']:
+	image_tag = os.get('IMAGE_TAG', None)
+	if image_tag:
 		path = Path('/tmp/info.json')
 		data = json.loads(path.read_text()) if path.exists() else {}
-		data['model_tag'] = os.environ['IMAGE_TAG']
+		data['model_tag'] = image_tag
 		path.write_text(json.dumps(data, indent=2))
 
 	# if notebook return some args. add them
