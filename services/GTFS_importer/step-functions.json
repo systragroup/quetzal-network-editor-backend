@@ -12,7 +12,7 @@
                     "launcher_arg.$": "$.launcher_arg",
                     "metadata.$": "$.metadata"
                 },
-                "FunctionName": "arn:aws:lambda:ca-central-1:142023388927:function:quetzal-gtfs-api-dev"
+                "FunctionName": "arn:aws:lambda:ca-central-1:142023388927:function:quetzal-gtfs-api"
             },
             "Retry": [
                 {
