@@ -78,7 +78,7 @@ async def get_buckets(Authorization: Annotated[str | None, Header()] = None):
 				s3_policies.append(policy[1]['Resource'])
 	# remove arn:aws:s3::: and /*
 	buckets = [pol[13:-2] for pol in s3_policies]
-	buckets = [bucket for bucket in buckets if bucket not in ['quenedi-osm', 'quetzal-config', 'quetzal-api-bucket']]
+	buckets = [bucket for bucket in buckets if bucket not in ['quetzal-api-bucket', 'quetzal-api-bucket-dev']]
 	buckets.sort()
 	return buckets
 
