@@ -25,6 +25,12 @@ variable "bucket_name" {
   default     = "quetzal-api-bucket"
 }
 
+variable "create_storage" {
+  description = "create a s3 bucket"
+  type        = bool
+  default     = true
+}
+
 locals {
   general_tags = {
     "cost:project" : "quetzal",

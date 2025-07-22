@@ -19,6 +19,23 @@ This repo host all the infrastructure and scripts for:
  * quetzal-stepfunction-auth (used in quetzal model step function definition for authorization step.)
  * Api gateway
 
+# INFRA (base)
+ There are 2 workspaces default (prod) and dev.
+
+ ``sh
+ terraform workspace list
+ ``
+to select
+ ``sh
+ terraform workspace select dev
+ ``
+
+ to update
+
+``sh
+terraform apply --var-file="environments/dev.tfvars"
+``
+
 # INFRA (models)
  * Every models infrastrucure.
 

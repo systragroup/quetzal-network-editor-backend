@@ -14,6 +14,7 @@ provider "aws" {
 
 # create S3 bucket with CORS policy
 module "s3" {
+  count       = var.create_storage ? 1 : 0
   source      = "./modules/storage"
   bucket_name = var.bucket_name
   tags        = local.general_tags
