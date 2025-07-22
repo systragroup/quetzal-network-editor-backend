@@ -72,7 +72,7 @@ module "lambda-gtfs" {
 # create lambda invoke role (inline policy) and step funtion with  Hello World definition
 module "step_function-gtfs" {
   depends_on               = [module.lambda-gtfs]
-  source                   = "./modules/step_function"
+  source                   = "../modules/step_function"
   step_function_name       = var.gtfs_api_name
   state_machine_definition = var.gtfs_api_state_machine
   step_function_role_name  = "sfn-${var.gtfs_api_name}-role"
@@ -109,7 +109,7 @@ module "lambda-osm" {
 # create lambda invoke role (inline policy) and step funtion with  Hello World definition
 module "step_function-osm" {
   depends_on               = [module.lambda-osm]
-  source                   = "./modules/step_function"
+  source                   = "../modules/step_function"
   step_function_name       = var.osm_api_name
   state_machine_definition = var.osm_api_state_machine
   step_function_role_name  = "sfn-${var.osm_api_name}-role"
@@ -146,7 +146,7 @@ module "lambda-matrixroadcaster" {
 # create lambda invoke role (inline policy) and step funtion with  Hello World definition
 module "step_function-matrixroadcaster" {
   depends_on               = [module.lambda-matrixroadcaster]
-  source                   = "./modules/step_function"
+  source                   = "../modules/step_function"
   step_function_name       = var.matrixroadcaster_api_name
   state_machine_definition = var.matrixroadcaster_api_state_machine
   step_function_role_name  = "sfn-${var.matrixroadcaster_api_name}-role"
@@ -183,7 +183,7 @@ module "lambda-mapmatching" {
 # create lambda invoke role (inline policy) and step funtion with  Hello World definition
 module "step_function-mapmatching" {
   depends_on               = [module.lambda-mapmatching]
-  source                   = "./modules/step_function"
+  source                   = "../modules/step_function"
   step_function_name       = var.mapmatching_api_name
   state_machine_definition = var.mapmatching_api_state_machine
   step_function_role_name  = "sfn-${var.mapmatching_api_name}-role"
@@ -219,7 +219,7 @@ module "lambda-transit" {
 # create lambda invoke role (inline policy) and step funtion with  Hello World definition
 module "step_function-transit" {
   depends_on               = [module.lambda-transit]
-  source                   = "./modules/step_function"
+  source                   = "../modules/step_function"
   step_function_name       = var.transit_api_name
   state_machine_definition = var.transit_api_state_machine
   step_function_role_name  = "sfn-${var.transit_api_name}-role"
