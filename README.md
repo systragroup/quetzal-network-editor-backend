@@ -64,3 +64,11 @@ to deploy Transit-api. use the update-lambda script in docker/script
  ```sh
  python update-function-config.py quetzal_transit
 ```
+
+
+# terraform helper
+
+rename a ressource. here i had to rename the null_resource from "docker_packaging" to "image"
+```sh
+terraform state mv "module.ecr-osm.null_resource.docker_packaging" "module.ecr-osm.null_resource.image"
+```
