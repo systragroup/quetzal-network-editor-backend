@@ -50,6 +50,8 @@ terraform apply --var-file="environments/dev.tfvars"
  ## Mapmatching
  
  to deploy mapmatching. use the update-lambda script in docker/script
+
+ Change the .env file for prod or dev
  
  ```sh
  ./update-lambda.sh quetzal-network-editor-backend/services/MapMatching

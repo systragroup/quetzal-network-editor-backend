@@ -12,7 +12,7 @@
           "launcher_arg.$": "$.launcher_arg",
           "metadata.$": "$.metadata"
         },
-        "FunctionName": "arn:aws:lambda:ca-central-1:142023388927:function:quetzal-mapmatching-api"
+        "FunctionName": "arn:aws:lambda:ca-central-1:142023388927:function:quetzal-mapmatching-api-dev"
       },
       "Retry": [
         {
@@ -47,7 +47,7 @@
           "training_folder.$": "$.launcher_arg.training_folder",
           "params": {
             "exclusions.$": "$.launcher_arg.params.exclusions",
-            "keepTime.$":"$.launcher_arg.params.keepTime",
+            "keepTime.$": "$.launcher_arg.params.keepTime",
             "SIGMA.$": "$.launcher_arg.params.SIGMA",
             "BETA.$": "$.launcher_arg.params.BETA",
             "POWER.$": "$.launcher_arg.params.POWER",
@@ -71,7 +71,7 @@
                 "metadata.$": "$.metadata",
                 "launcher_arg.$": "$.launcher_arg"
               },
-              "FunctionName": "arn:aws:lambda:ca-central-1:142023388927:function:quetzal-mapmatching-api"
+              "FunctionName": "arn:aws:lambda:ca-central-1:142023388927:function:quetzal-mapmatching-api-dev"
             },
             "Retry": [
               {
@@ -110,7 +110,7 @@
           "launcher_arg.$": "$[0].launcher_arg",
           "metadata.$": "$[0].metadata"
         },
-        "FunctionName": "arn:aws:lambda:ca-central-1:142023388927:function:quetzal-mapmatching-api"
+        "FunctionName": "arn:aws:lambda:ca-central-1:142023388927:function:quetzal-mapmatching-api-dev"
       },
       "Retry": [
         {
