@@ -24,7 +24,7 @@ module "s3" {
 # cognito API
 # =========
 module "ecr-cognito" {
-  source    = "./modules/ecr"
+  source    = "../modules/ecr"
   repo_name = var.cognito_api_name
   tags      = local.cognito_api_tags
 }
@@ -49,16 +49,15 @@ module "lambda-cognito" {
 # GTFS API
 # =========
 
-# create ECR instance with a dummy docker image
 module "ecr-gtfs" {
-  source    = "./modules/ecr"
+  source    = "../modules/ecr"
   repo_name = var.gtfs_api_name
   tags      = local.gtfs_api_tags
 }
 
 # create CloudWatch group, lambda function, IAM role and policy for the lambda function. use dummy image.
 module "lambda-gtfs" {
-  source        = "./modules/lambda"
+  source        = "../modules/lambda"
   depends_on    = [module.ecr-gtfs]
   function_name = var.gtfs_api_name
   ecr_repo_name = var.gtfs_api_name
@@ -88,14 +87,14 @@ module "step_function-gtfs" {
 
 # create ECR isntance with a dummy docker image
 module "ecr-osm" {
-  source    = "./modules/ecr"
+  source    = "../modules/ecr"
   repo_name = var.osm_api_name
   tags      = local.osm_api_tags
 }
 
 # create CloudWatch group, lambda function, IAM role and policy for the lambda function. use dummy image.
 module "lambda-osm" {
-  source        = "./modules/lambda"
+  source        = "../modules/lambda"
   depends_on    = [module.ecr-osm]
   function_name = var.osm_api_name
   ecr_repo_name = var.osm_api_name
@@ -125,14 +124,14 @@ module "step_function-osm" {
 
 # create ECR isntance with a dummy docker image
 module "ecr-matrixroadcaster" {
-  source    = "./modules/ecr"
+  source    = "../modules/ecr"
   repo_name = var.matrixroadcaster_api_name
   tags      = local.matrixroadcaster_api_tags
 }
 
 # create CloudWatch group, lambda function, IAM role and policy for the lambda function. use dummy image.
 module "lambda-matrixroadcaster" {
-  source        = "./modules/lambda"
+  source        = "../modules/lambda"
   depends_on    = [module.ecr-matrixroadcaster]
   function_name = var.matrixroadcaster_api_name
   ecr_repo_name = var.matrixroadcaster_api_name
@@ -162,14 +161,14 @@ module "step_function-matrixroadcaster" {
 
 # create ECR isntance with a dummy docker image
 module "ecr-mapmatching" {
-  source    = "./modules/ecr"
+  source    = "../modules/ecr"
   repo_name = var.mapmatching_api_name
   tags      = local.mapmatching_api_tags
 }
 
 # create CloudWatch group, lambda function, IAM role and policy for the lambda function. use dummy image.
 module "lambda-mapmatching" {
-  source        = "./modules/lambda"
+  source        = "../modules/lambda"
   depends_on    = [module.ecr-mapmatching]
   function_name = var.mapmatching_api_name
   ecr_repo_name = var.mapmatching_api_name
@@ -198,14 +197,14 @@ module "step_function-mapmatching" {
 
 # create ECR isntance with a dummy docker image
 module "ecr-transit" {
-  source    = "./modules/ecr"
+  source    = "../modules/ecr"
   repo_name = var.transit_api_name
   tags      = local.transit_api_tags
 }
 
 # create CloudWatch group, lambda function, IAM role and policy for the lambda function. use dummy image.
 module "lambda-transit" {
-  source        = "./modules/lambda"
+  source        = "../modules/lambda"
   depends_on    = [module.ecr-transit]
   function_name = var.transit_api_name
   ecr_repo_name = var.transit_api_name
