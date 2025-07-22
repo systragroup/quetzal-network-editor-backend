@@ -84,49 +84,6 @@ variable "gtfs_api_storage_size" {
   type        = number
 }
 
-variable "gtfs_api_state_machine" {
-  description = "New state machine definition"
-  type        = string
-  default     = <<EOF
-    {
-      "Comment": "step function calling the lambda function",
-      "StartAt": "api call",
-      "States": {
-        "api call": {
-          "Type": "Task",
-          "Resource": "arn:aws:states:::lambda:invoke",
-          "OutputPath": "$.Payload",
-          "Parameters": {
-            "Payload.$": "$",
-            "FunctionName": "arn:aws:lambda:ca-central-1:142023388927:function:quetzal-gtfs-api:$LATEST"
-          },
-          "Retry": [
-          {
-            "ErrorEquals": [
-              "Lambda.ServiceException",
-              "Lambda.SdkClientException",
-              "Lambda.TooManyRequestsException"
-            ],
-            "IntervalSeconds": 2,
-            "MaxAttempts": 2,
-            "BackoffRate": 2
-          },
-          {
-            "ErrorEquals": [
-              "Lambda.AWSLambdaException"
-            ],
-            "IntervalSeconds": 30,
-            "MaxAttempts": 4,
-            "BackoffRate": 2
-          }
-          ],
-          "End": true
-        }
-      }
-    }
-    EOF
-}
-
 # =========
 # OSM API
 # =========
@@ -155,49 +112,6 @@ variable "osm_api_storage_size" {
   type        = number
 }
 
-variable "osm_api_state_machine" {
-  description = "New state machine definition"
-  type        = string
-  default     = <<EOF
-    {
-      "Comment": "step function calling the lambda function",
-      "StartAt": "api call",
-      "States": {
-        "api call": {
-          "Type": "Task",
-          "Resource": "arn:aws:states:::lambda:invoke",
-          "OutputPath": "$.Payload",
-          "Parameters": {
-            "Payload.$": "$",
-            "FunctionName": "arn:aws:lambda:ca-central-1:142023388927:function:quetzal-osm-api:$LATEST"
-          },
-          "Retry": [
-            {
-              "ErrorEquals": [
-                "Lambda.ServiceException",
-                "Lambda.SdkClientException",
-                "Lambda.TooManyRequestsException"
-              ],
-              "IntervalSeconds": 2,
-              "MaxAttempts": 2,
-              "BackoffRate": 2
-            },
-            {
-              "ErrorEquals": [
-                "Lambda.AWSLambdaException"
-              ],
-              "IntervalSeconds": 30,
-              "MaxAttempts": 4,
-              "BackoffRate": 2
-            }
-          ],
-          "End": true
-        }
-      }
-    }
-    EOF
-}
-
 # =========
 # matrixroadcaster API
 # =========
@@ -224,49 +138,6 @@ variable "matrixroadcaster_api_storage_size" {
   description = "Lambda function ephemeral storage size in mb"
   default     = 512
   type        = number
-}
-
-variable "matrixroadcaster_api_state_machine" {
-  description = "New state machine definition"
-  type        = string
-  default     = <<EOF
-    {
-      "Comment": "step function calling the lambda function",
-      "StartAt": "api call",
-      "States": {
-        "api call": {
-          "Type": "Task",
-          "Resource": "arn:aws:states:::lambda:invoke",
-          "OutputPath": "$.Payload",
-          "Parameters": {
-            "Payload.$": "$",
-            "FunctionName": "arn:aws:lambda:ca-central-1:142023388927:function:quetzal-matrixroadcaster-api:$LATEST"
-          },
-          "Retry": [
-            {
-              "ErrorEquals": [
-                "Lambda.ServiceException",
-                "Lambda.SdkClientException",
-                "Lambda.TooManyRequestsException"
-              ],
-              "IntervalSeconds": 2,
-              "MaxAttempts": 2,
-              "BackoffRate": 2
-            },
-            {
-              "ErrorEquals": [
-                "Lambda.AWSLambdaException"
-              ],
-              "IntervalSeconds": 30,
-              "MaxAttempts": 4,
-              "BackoffRate": 2
-            }
-          ],
-          "End": true
-        }
-      }
-    }
-    EOF
 }
 
 
@@ -329,51 +200,6 @@ variable "mapmatching_api_storage_size" {
   type        = number
 }
 
-variable "mapmatching_api_state_machine" {
-  description = "New state machine definition"
-  type        = string
-  default     = <<EOF
-    {
-      "Comment": "step function calling the lambda function",
-      "StartAt": "api call",
-      "States": {
-        "api call": {
-          "Type": "Task",
-          "Resource": "arn:aws:states:::lambda:invoke",
-          "OutputPath": "$.Payload",
-          "Parameters": {
-            "Payload": {
-            "launcher_arg.$": "$.launcher_arg",
-            "test": "32"
-          },
-            "FunctionName": "arn:aws:lambda:ca-central-1:142023388927:function:quetzal-mapmatching-api:$LATEST"
-          },
-          "Retry": [
-          {
-            "ErrorEquals": [
-              "Lambda.ServiceException",
-              "Lambda.SdkClientException",
-              "Lambda.TooManyRequestsException"
-            ],
-            "IntervalSeconds": 2,
-            "MaxAttempts": 2,
-            "BackoffRate": 2
-          },
-          {
-            "ErrorEquals": [
-              "Lambda.AWSLambdaException"
-            ],
-            "IntervalSeconds": 30,
-            "MaxAttempts": 4,
-            "BackoffRate": 2
-          }
-          ],
-          "End": true
-        }
-      }
-    }
-    EOF
-}
 
 # =========
 # Transit API
@@ -403,48 +229,21 @@ variable "transit_api_storage_size" {
   type        = number
 }
 
-variable "transit_api_state_machine" {
+
+variable "state_machine_definition" {
   description = "New state machine definition"
   type        = string
   default     = <<EOF
-    {
-      "Comment": "step function calling the lambda function",
-      "StartAt": "api call",
-      "States": {
-        "api call": {
-          "Type": "Task",
-          "Resource": "arn:aws:states:::lambda:invoke",
-          "OutputPath": "$.Payload",
-          "Parameters": {
-            "Payload": {
-            "launcher_arg.$": "$.launcher_arg",
-            "test": "32"
-          },
-            "FunctionName": "arn:aws:lambda:ca-central-1:142023388927:function:quetzal-transit-api:$LATEST"
-          },
-          "Retry": [
-          {
-            "ErrorEquals": [
-              "Lambda.ServiceException",
-              "Lambda.SdkClientException",
-              "Lambda.TooManyRequestsException"
-            ],
-            "IntervalSeconds": 2,
-            "MaxAttempts": 2,
-            "BackoffRate": 2
-          },
-          {
-            "ErrorEquals": [
-              "Lambda.AWSLambdaException"
-            ],
-            "IntervalSeconds": 30,
-            "MaxAttempts": 4,
-            "BackoffRate": 2
+      {
+        "Comment": "A state machine definition",
+        "StartAt": "FirstState",
+        "States": {
+          "FirstState": {
+            "Type": "Pass",
+            "Result": "Hello, Step Functions!",
+            "End": true
           }
-          ],
-          "End": true
         }
       }
-    }
     EOF
 }

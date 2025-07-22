@@ -74,7 +74,7 @@ module "step_function-gtfs" {
   depends_on               = [module.lambda-gtfs]
   source                   = "../modules/step_function"
   step_function_name       = var.gtfs_api_name
-  state_machine_definition = var.gtfs_api_state_machine
+  state_machine_definition = var.state_machine_definition
   step_function_role_name  = "sfn-${var.gtfs_api_name}-role"
   lambda_function_name     = var.gtfs_api_name
   tags                     = local.gtfs_api_tags
@@ -111,7 +111,7 @@ module "step_function-osm" {
   depends_on               = [module.lambda-osm]
   source                   = "../modules/step_function"
   step_function_name       = var.osm_api_name
-  state_machine_definition = var.osm_api_state_machine
+  state_machine_definition = var.state_machine_definition
   step_function_role_name  = "sfn-${var.osm_api_name}-role"
   lambda_function_name     = var.osm_api_name
   tags                     = local.osm_api_tags
@@ -148,7 +148,7 @@ module "step_function-matrixroadcaster" {
   depends_on               = [module.lambda-matrixroadcaster]
   source                   = "../modules/step_function"
   step_function_name       = var.matrixroadcaster_api_name
-  state_machine_definition = var.matrixroadcaster_api_state_machine
+  state_machine_definition = var.state_machine_definition
   step_function_role_name  = "sfn-${var.matrixroadcaster_api_name}-role"
   lambda_function_name     = var.matrixroadcaster_api_name
   tags                     = local.matrixroadcaster_api_tags
@@ -185,7 +185,7 @@ module "step_function-mapmatching" {
   depends_on               = [module.lambda-mapmatching]
   source                   = "../modules/step_function"
   step_function_name       = var.mapmatching_api_name
-  state_machine_definition = var.mapmatching_api_state_machine
+  state_machine_definition = var.state_machine_definition
   step_function_role_name  = "sfn-${var.mapmatching_api_name}-role"
   lambda_function_name     = var.mapmatching_api_name
   tags                     = local.mapmatching_api_tags
@@ -221,7 +221,7 @@ module "step_function-transit" {
   depends_on               = [module.lambda-transit]
   source                   = "../modules/step_function"
   step_function_name       = var.transit_api_name
-  state_machine_definition = var.transit_api_state_machine
+  state_machine_definition = var.state_machine_definition
   step_function_role_name  = "sfn-${var.transit_api_name}-role"
   lambda_function_name     = var.transit_api_name
   tags                     = local.transit_api_tags
