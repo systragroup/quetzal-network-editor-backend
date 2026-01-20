@@ -12,7 +12,7 @@
                     "launcher_arg.$": "$.launcher_arg",
                     "metadata.$": "$.metadata"
                 },
-                "FunctionName": "arn:aws:lambda:ca-central-1:142023388927:function:quetzal-matrixroadcaster-api-dev"
+                "FunctionName": "arn:aws:lambda:ca-central-1:142023388927:function:quetzal-matrixroadcaster-api"
             },
             "Retry": [
                 {
