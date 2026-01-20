@@ -125,7 +125,7 @@ def handler(event, context):
 	print('Notebook conversion: {} seconds'.format(t2 - t1))
 
 	process = Popen(command_list, stdout=PIPE, stderr=STDOUT, env=my_env, cwd=cwd)
-	process.wait(timeout=800)
+	process.wait(timeout=800)  # for lambda. max time is 900. so wait max 800
 
 	content = process.stdout.read().decode('utf-8')
 
@@ -136,10 +136,11 @@ def handler(event, context):
 	print('Notebook execution: {} seconds'.format(t3 - t2))
 
 	print(content)
-	# TODO: better parse :
-	# if we print 'Error' and there is no end_of_notebook. we will raise an error...
-	if 'Error' in content and 'end_of_notebook' not in content:
-		raise RuntimeError(format_error(content))
+	# parse error. if return_code!=0 (there is an error)
+	# doule check for [ERROR]. also: do not throw error for end_of_notebook
+	if process.returncode != 0:
+		if 'end_of_notebook' not in content:
+			raise RuntimeError(format_error(content))
 
 	# Write model version in info.json
 	image_tag = os.environ.get('IMAGE_TAG', None)
