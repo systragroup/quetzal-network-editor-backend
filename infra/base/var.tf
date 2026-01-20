@@ -142,7 +142,7 @@ variable "matrixroadcaster_api_time_limit" {
 
 variable "matrixroadcaster_api_storage_size" {
   description = "Lambda function ephemeral storage size in mb"
-  default     = 512
+  default     = 2048
   type        = number
 }
 

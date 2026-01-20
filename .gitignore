@@ -8,4 +8,5 @@ infra/models/.terraform/*
 
 # microservices
 services/MapMatching/scenarios/*    
-
+services/ML_MatrixRoadCaster/scenarios/*    
+services/GTFS_importer/scenarios/*    

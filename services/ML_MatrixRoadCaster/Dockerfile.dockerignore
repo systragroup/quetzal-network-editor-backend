@@ -1,0 +1,6 @@
+__pycache__
+*.ipynb_checkpoints
+*.python-version
+*.md
+*.env
+quetzal-network-editor/services/ML_MatrixRoadCaster/scenarios/

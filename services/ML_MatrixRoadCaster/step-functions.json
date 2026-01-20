@@ -1,0 +1,40 @@
+{
+    "StartAt": "importer",
+    "States": {
+        "importer": {
+            "Type": "Task",
+            "Resource": "arn:aws:states:::lambda:invoke",
+            "OutputPath": "$.Payload",
+            "Parameters": {
+                "Payload": {
+                    "notebook_path": "notebooks/main.ipynb",
+                    "scenario_path_S3.$": "$.scenario_path_S3",
+                    "launcher_arg.$": "$.launcher_arg",
+                    "metadata.$": "$.metadata"
+                },
+                "FunctionName": "arn:aws:lambda:ca-central-1:142023388927:function:quetzal-matrixroadcaster-api-dev"
+            },
+            "Retry": [
+                {
+                    "ErrorEquals": [
+                        "Lambda.ServiceException",
+                        "Lambda.SdkClientException",
+                        "Lambda.TooManyRequestsException"
+                    ],
+                    "IntervalSeconds": 2,
+                    "MaxAttempts": 2,
+                    "BackoffRate": 2
+                },
+                {
+                    "ErrorEquals": [
+                        "Lambda.AWSLambdaException"
+                    ],
+                    "IntervalSeconds": 30,
+                    "MaxAttempts": 4,
+                    "BackoffRate": 2
+                }
+            ],
+            "End": true
+        }
+    }
+}
