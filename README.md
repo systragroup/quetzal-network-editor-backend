@@ -22,19 +22,19 @@ This repo host all the infrastructure and scripts for:
 # INFRA (base)
  There are 2 workspaces default (prod) and dev.
 
- ``sh
+ ```sh
  terraform workspace list
- ``
+ ```
 to select
- ``sh
+ ```sh
  terraform workspace select dev
- ``
+ ```
 
  to update
 
-``sh
+```sh
 terraform apply --var-file="environments/dev.tfvars"
-``
+```
 
 # INFRA (models)
  * Every models infrastrucure.
