@@ -3,21 +3,33 @@ setlocal enabledelayedexpansion
 
 set "QUETZAL_ROOT=..\..\.."
 
-IF "%~2"=="" (
-  echo "%0 requires at least 2 arguments <model folder> <tag>"
-  exit /b 1
+
+if "%~1"=="" (
+  echo "%0 requires 1 argument <model folder>"
+  exit /b -1
 )
+set "MODEL_FOLDER=%~1"
+shift
 
-SET MODEL_FOLDER=%1
-SET TAG=%2
 
-cd %QUETZAL_ROOT%
+set ENV_FILE=%QUETZAL_ROOT%\%MODEL_FOLDER%\.env
+:: Load model .env
+:: Loop through the lines in the .env file and set environment variables
+for /f "delims=" %%a in (%ENV_FILE%) do (
+    set %%a
+)
+echo %AWS_ECR_REPO_NAME%
 
-FOR /F "tokens=*" %%i in ('type "%MODEL_FOLDER%\.env"') do (SET "%%i")
+:: Prompt user for a tag
+for /f %%i in ('aws ecr describe-images --repository-name %AWS_ECR_REPO_NAME% ^
+    --query "sort_by(imageDetails,& imagePushedAt)[-1].imageTags[0]"') do set "last_tag=%%i"
 
-docker build --build-arg QUETZAL_MODEL_NAME=%MODEL_FOLDER% ^
-  -t %AWS_ECR_REPO_NAME%:%TAG% ^
-  -f %MODEL_FOLDER%/Dockerfile .
+for /f "usebackq tokens=*" %%i in (`aws ecr describe-images --repository-name %AWS_ECR_REPO_NAME% ^
+    --query "imageDetails[].imageTags[]" --output text`) do set "all_tags=%%i"
+
+echo Available tags: %all_tags%
+set /p TAG="Enter a docker TAG (last: !last_tag!): "
+
 
 REM Connect to ECR
 FOR /F "tokens=* USEBACKQ" %%F IN (`aws sts get-caller-identity --query "Account" --output text`) DO (
@@ -26,16 +38,6 @@ SET aws_account=%%F
 FOR /F "tokens=* USEBACKQ" %%F IN (`aws configure get region`) DO (
 SET aws_region=%%F
 )
-
-aws ecr get-login-password --region %aws_region%  | docker login --username AWS --password-stdin %aws_account%.dkr.ecr.%aws_region%.amazonaws.com
-
-
-REM Tag docker
-docker tag %AWS_ECR_REPO_NAME%:%TAG% %aws_account%.dkr.ecr.%aws_region%.amazonaws.com/%AWS_ECR_REPO_NAME%:%TAG%
-
-REM Push docket to aws
-docker push %aws_account%.dkr.ecr.%aws_region%.amazonaws.com/%AWS_ECR_REPO_NAME%:%TAG%
-
 
 REM update Lambda
 aws lambda update-function-code --region %aws_region% --function-name  %AWS_LAMBDA_FUNCTION_NAME% ^
@@ -46,15 +48,14 @@ echo "updating lambda function ..."
 aws lambda wait function-updated --region %aws_region% --function-name  %AWS_LAMBDA_FUNCTION_NAME%
 
 
-echo "updating lambda Tags ..."
-
-REM 1) get current env variables and write a temporary json file (_env.json)
+REM 1) get current env variables
 aws lambda get-function-configuration ^
     --function-name "%AWS_LAMBDA_FUNCTION_NAME%" ^
     --query "Environment.Variables" ^
     --output json > _env.json
 
-REM 2) update env with new tag. and rename {Variable:{..}} for the was command to work
+
+REM 2) update env with new tag
 powershell -NoProfile -Command ^
     "$env = Get-Content '_env.json' | ConvertFrom-Json; if ($null -eq $env) { $env = @{} }; $env.IMAGE_TAG = '%TAG%'; @{Variables=$env} | ConvertTo-Json -Compress | Set-Content '_env.json'"
 
@@ -63,10 +64,8 @@ aws lambda update-function-configuration ^
     --function-name "%AWS_LAMBDA_FUNCTION_NAME%" ^
     --environment file://_env.json
     
-REM delete the temp json tile
-del _env.json 
+del _env.json
 
-
-echo "success"
+echo success 
 
 endlocal
