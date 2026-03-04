@@ -15,9 +15,8 @@ cd $QUETZAL_ROOT
 # Load model .env
 source $MODEL_FOLDER/.env
 
-# Build docker image
-docker build  --build-arg QUETZAL_MODEL_NAME=$MODEL_FOLDER \
-  --provenance=false \  # new docker version create metadata that are not supported by lambda 
+# Build docker image  # new docker version create metadata that are not supported by lambda 
+docker build  --provenance=false --build-arg QUETZAL_MODEL_NAME=$MODEL_FOLDER \
   -t $AWS_ECR_REPO_NAME:$TAG \
   -f $MODEL_FOLDER/Dockerfile .
 
