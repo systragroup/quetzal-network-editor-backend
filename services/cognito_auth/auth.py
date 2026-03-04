@@ -5,7 +5,9 @@ import json
 import boto3
 from fastapi import HTTPException
 
+from dotenv import load_dotenv
 
+load_dotenv()
 USER_POOL_ID = os.environ['USER_POOL_ID']
 APP_CLIENT_ID = os.environ['APP_CLIENT_ID']
 REGION = os.environ['REGION']
@@ -86,4 +88,38 @@ def get_inline_policy_document(policy_name, role_name):
 	return policy['PolicyDocument']['Statement']
 
 
-# GetRolePolicy
+def get_user_policies(claims):
+	# claim => role => policies
+
+	try:
+		role_arn = claims['cognito:roles'][0]
+	except Exception:
+		raise HTTPException(status_code=400, detail='User has no Cognito role')
+	role_name = role_arn.split('/')[-1]
+	try:
+		policies = get_policies_from_role(role_name)
+	except Exception as e:
+		raise Exception('error listing role policies:', e)
+	try:
+		inline_policies = get_inline_policies_from_role(role_name)
+		policies.extend(inline_policies)
+	except Exception as e:
+		raise Exception('error listing role inline policies:', e)
+	return policies
+
+
+def get_available_buckets(policies) -> list[str]:
+	# return a list of bucket
+	# get a list of all s3 buckets access ['arn:aws:s3:::quetzal-test/*, ...]
+	s3_policies = []
+	for policy in policies:
+		if policy[1]['Effect'] == 'Allow':
+			if isinstance(policy[1]['Resource'], list):
+				s3_policies = s3_policies + policy[1]['Resource']
+			else:
+				s3_policies.append(policy[1]['Resource'])
+	# remove arn:aws:s3::: and /*
+	buckets = [pol[13:-2] for pol in s3_policies]
+	#'remove reserved bucket'
+	buckets = [bucket for bucket in buckets if bucket not in ['quetzal-api-bucket', 'quetzal-api-bucket-dev']]
+	return buckets

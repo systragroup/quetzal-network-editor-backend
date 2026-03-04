@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "cognito-auth"
+version = "4.2.0"
+description = ""
+authors = ["simon boivin <sboivin@systra.com>"]
+readme = "README.md"
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "^3.12"
+requests = "*"
+PyJWT = "*"
+cryptography = "*"
+boto3 = "*"
+fastapi = "*"
+uvicorn = "*"
+mangum = "*"
+pydantic = "*"
+dotenv = "^0.9.9"
+toml = "^0.10.2"
+
+
+
