@@ -1,5 +1,15 @@
-FROM public.ecr.aws/lambda/python:3.11
-COPY ./requirements.txt ./requirements.txt
-RUN pip install -r ./requirements.txt
+FROM public.ecr.aws/lambda/python:3.12
+
+
+# Install poetry
+RUN pip install --no-cache-dir poetry
+RUN poetry config virtualenvs.create false
+
+# Copy project files 
+COPY ./pyproject.toml .
+COPY ./poetry.lock .
+# install
+RUN poetry install --no-root 
+
 COPY ./ ./
 CMD ["main.handler"]

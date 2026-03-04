@@ -1,1 +1,2 @@
 infra/base/environments/**/* filter=secret diff=secret
+*.env filter=secret diff=secret

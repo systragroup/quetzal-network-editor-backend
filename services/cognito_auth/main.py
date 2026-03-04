@@ -4,8 +4,9 @@ from fastapi import FastAPI, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import boto3
-from auth import auth, get_policies_from_role, get_inline_policies_from_role
+from auth import auth, get_user_policies, get_available_buckets
 from typing import Optional, Annotated
+import toml
 
 
 from middlewares.exception import ExceptionHandlerMiddleware
@@ -26,6 +27,8 @@ class Username(BaseModel):
 USER_POOL_ID = os.environ['USER_POOL_ID']
 
 client = boto3.client('cognito-idp')
+pyproject = toml.load('pyproject.toml')
+VERSION = pyproject['tool']['poetry']['version']
 
 
 app = FastAPI()
@@ -50,55 +53,50 @@ def read_root():
 	return {'Hello': 'Quenedi Cognito API'}
 
 
+@app.get('/version')
+def version():
+	return {'version': VERSION}
+
+
 @app.get('/buckets/')
 async def get_buckets(Authorization: Annotated[str | None, Header()] = None):
 	claims = auth(Authorization)
-	try:
-		role_arn = claims['cognito:roles'][0]
-	except Exception:
-		raise HTTPException(status_code=400, detail='User has no Cognito role')
-	role_name = role_arn.split('/')[-1]
-	try:
-		policies = get_policies_from_role(role_name)
-	except Exception as e:
-		raise Exception('error listing role policies:', e)
-	try:
-		inline_policies = get_inline_policies_from_role(role_name)
-		policies.extend(inline_policies)
-	except Exception as e:
-		raise Exception('error listing role inline policies:', e)
-
-	# get a list of all s3 buckets access ['arn:aws:s3:::quetzal-test/*, ...]
-	s3_policies = []
-	for policy in policies:
-		if policy[1]['Effect'] == 'Allow':
-			if type(policy[1]['Resource']) == list:
-				s3_policies = s3_policies + policy[1]['Resource']
-			else:
-				s3_policies.append(policy[1]['Resource'])
-	# remove arn:aws:s3::: and /*
-	buckets = [pol[13:-2] for pol in s3_policies]
-	buckets = [bucket for bucket in buckets if bucket not in ['quetzal-api-bucket', 'quetzal-api-bucket-dev']]
+	policies = get_user_policies(claims)
+	buckets = get_available_buckets(policies)
 	buckets.sort()
 	return buckets
+
+
+def get_user_groups(claims) -> list[str]:
+	# return the list of available user_groups for a given user
+	# this is Bucket based. so you only see groups with the name == bucket name
+	user_group = claims['cognito:groups'][0]
+	_all_groups = [group['GroupName'] for group in client.list_groups(UserPoolId=USER_POOL_ID)['Groups']]
+	if user_group == 'admin':
+		return _all_groups
+	else:
+		# list policies to find all available buckets
+		policies = get_user_policies(claims)
+		buckets = get_available_buckets(policies)
+		_all_groups = [group['GroupName'] for group in client.list_groups(UserPoolId=USER_POOL_ID)['Groups']]
+		available_groups = [name for name in _all_groups if name in buckets]
+		# insert actual user group as first in the list
+		available_groups = [name for name in available_groups if name != user_group]
+		available_groups = [user_group, *available_groups]
+		return available_groups
 
 
 @app.get('/listGroups/')
 async def list_groups(Authorization: Annotated[str | None, Header()] = None):
 	claims = auth(Authorization)
-	user_group = claims['cognito:groups'][0]
-	if user_group == 'admin':
-		response = client.list_groups(UserPoolId=USER_POOL_ID)
-		return [group['GroupName'] for group in response['Groups']]
-	else:
-		return [user_group]
+	groups = get_user_groups(claims)
+	return groups
 
 
 @app.get('/listUser/{group}/')
 async def list_users(group: str, Authorization: Annotated[str | None, Header()] = None):
 	claims = auth(Authorization)
-	user_group = claims['cognito:groups'][0]
-	if (user_group != group) and (user_group != 'admin'):
+	if group not in get_user_groups(claims):
 		raise HTTPException(status_code=401, detail='not allowed')
 
 	# Can be paginated with NextToken
@@ -124,18 +122,15 @@ async def set_password(payload: User, Authorization: Annotated[str | None, Heade
 	claims = auth(Authorization)
 
 	user_group = claims['cognito:groups'][0]
-
-	response = client.list_users_in_group(UserPoolId=USER_POOL_ID, GroupName=user_group)
-	users = [user['Username'] for user in response['Users']]
-	if (payload.username in users) or (user_group == 'admin'):
-		try:
-			response = client.admin_set_user_password(
-				UserPoolId=USER_POOL_ID, Username=payload.username, Password=payload.password, Permanent=False
-			)
-		except Exception as err:
-			raise HTTPException(status_code=400, detail=str(err))
-	else:
+	if user_group not in get_user_groups(claims):
 		raise HTTPException(status_code=401, detail='not allowed')
+
+	try:
+		response = client.admin_set_user_password(
+			UserPoolId=USER_POOL_ID, Username=payload.username, Password=payload.password, Permanent=False
+		)
+	except Exception as err:
+		raise HTTPException(status_code=400, detail=str(err))
 
 	return response
 
@@ -144,7 +139,7 @@ async def set_password(payload: User, Authorization: Annotated[str | None, Heade
 async def create_user(group: str, payload: User, Authorization: Annotated[str | None, Header()] = None):
 	claims = auth(Authorization)
 	user_group = claims['cognito:groups'][0]
-	if (user_group != group) and (user_group != 'admin'):
+	if user_group not in get_user_groups(claims):
 		raise HTTPException(status_code=401, detail='not allowed')
 
 	try:
@@ -175,18 +170,16 @@ async def create_user(group: str, payload: User, Authorization: Annotated[str | 
 @app.post('/deleteUser/')
 async def delete_user(payload: Username, Authorization: Annotated[str | None, Header()] = None):
 	claims = auth(Authorization)
-
 	user_group = claims['cognito:groups'][0]
-
-	response = client.list_users_in_group(UserPoolId=USER_POOL_ID, GroupName=user_group)
-	users = [user['Username'] for user in response['Users']]
-	if (payload.username in users) or (user_group == 'admin'):
-		try:
-			response = client.admin_delete_user(UserPoolId=USER_POOL_ID, Username=payload.username)
-		except Exception as err:
-			raise HTTPException(status_code=400, detail=str(err))
-	else:
+	user_name = claims['cognito:username']
+	if user_group not in get_user_groups(claims):
 		raise HTTPException(status_code=401, detail='not allowed')
+	if payload.username == user_name:
+		raise HTTPException(status_code=403, detail='cannot delete yourself')
+	try:
+		response = client.admin_delete_user(UserPoolId=USER_POOL_ID, Username=payload.username)
+	except Exception as err:
+		raise HTTPException(status_code=400, detail=str(err))
 
 	return response
 

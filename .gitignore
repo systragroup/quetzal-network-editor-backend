@@ -5,6 +5,8 @@ infra/base/.terraform/*
 infra/models/.terraform/*
 *.tfstate
 *.tfstate.*
+*__pycache__*
+.python-version
 
 # microservices
 services/MapMatching/scenarios/*    

@@ -1,21 +1,26 @@
 
-firt. install dependancies
+
 ```bash
-pipenv install
+pyenv local 3.12
 ```
-export your env variables:
+
 ```bash
-export USER_POOL_ID=
-export APP_CLIENT_ID=
-export REGION=ca-central-1
+poetry install
 ```
 
 Then. to run locally
 ```bash
-pipenv run uvicorn main:app --reload
+poetry run uvicorn main:app --reload
+```
+or
+```sh
+./start.sh
 ```
 
-to deploy
+# to deploy
+
+change the variable in update-lambda.sh for dev or prod (quetzal-cognito-api or quetzal-cognito-api-dev)
+
 
 ```bash
  ./update-lambda.sh 
