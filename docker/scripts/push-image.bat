@@ -16,6 +16,7 @@ cd %QUETZAL_ROOT%
 FOR /F "tokens=*" %%i in ('type "%MODEL_FOLDER%\.env"') do (SET "%%i")
 
 docker build --build-arg QUETZAL_MODEL_NAME=%MODEL_FOLDER% ^
+  --provenance=false ^
   -t %AWS_ECR_REPO_NAME%:%TAG% ^
   -f %MODEL_FOLDER%/Dockerfile .
 

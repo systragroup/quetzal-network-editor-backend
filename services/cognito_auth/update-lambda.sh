@@ -1,5 +1,5 @@
-declare AWS_ECR_REPO_NAME=quetzal-cognito-api-dev
-declare AWS_LAMBDA_FUNCTION_NAME=quetzal-cognito-api-dev
+declare AWS_ECR_REPO_NAME=quetzal-cognito-api
+declare AWS_LAMBDA_FUNCTION_NAME=quetzal-cognito-api
 
 last_tag=$(aws ecr describe-images --repository-name $AWS_ECR_REPO_NAME \
     --query 'sort_by(imageDetails,& imagePushedAt)[-1].imageTags[0]')

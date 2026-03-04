@@ -5,7 +5,7 @@ ARG QUETZAL_MODEL_NAME='./'
 ENV QUETZAL_MODEL_NAME=$QUETZAL_MODEL_NAME
 
 # libexpat.so.1 is needed but not present in lambda layer anymore
-RUN dnf install -y expat && dnf clean all
+#RUN dnf install -y expat && dnf clean all # may not be necessary anymore...
 
 # Install dependancies and add them to paths
 COPY ./${QUETZAL_MODEL_NAME}/requirements.txt .
