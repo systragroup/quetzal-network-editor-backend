@@ -1,0 +1,12 @@
+**__pycache__**
+*.pyc
+**.cache**
+**.ipynb_checkpoints**
+**.DS_store**
+**.python-version**
+notebooks/*
+test/*
+tmp/*
+htmlcov/*
+*.env
+tests/*
