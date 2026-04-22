@@ -1,2 +1,2 @@
-osm-importer==4.1.0
+osm-importer==4.1.2
 boto3
