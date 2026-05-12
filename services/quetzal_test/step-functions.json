@@ -44,7 +44,7 @@
             "OutputPath": "$.Payload",
             "Parameters": {
                 "Payload": {
-                    "notebook_path": "notebooks/test_1.ipynb",
+                    "notebook_path": "notebooks/2_model/test_1.ipynb",
                     "scenario_path_S3.$": "$.scenario_path_S3",
                     "launcher_arg.$": "$.launcher_arg",
                     "metadata.$": "$.metadata"

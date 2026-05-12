@@ -1,0 +1,7 @@
+notebook_metadata_filter="-all" # or "-kernelspec,jupytext"
+
+
+[formats]
+"notebooks/" = "ipynb"
+"scripts/" = "py:percent"
+
