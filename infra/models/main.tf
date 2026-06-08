@@ -56,3 +56,12 @@ module "user_role" {
   s3_policy_name           = "s3_read_put_${var.quetzal_model_name}"
   bucket_name              = var.quetzal_model_name
 }
+
+
+module "deploy_role" {
+  source      = "./modules/deploy_role"
+  role_name   = "deploy_git_quetzal_${var.quetzal_model_name}"
+  ecr_repo    = var.quetzal_model_name
+  github_repo = "systragroup/quetzal-network-editor-backend"
+  gitlab_repo = ""
+}
