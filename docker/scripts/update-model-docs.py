@@ -2,10 +2,8 @@ import os
 import sys
 import boto3
 
-# python update-S3-model-files.py quetzal_test base
-# copy files from quetzal_test/scenarios/base/
-# to base/ on s3.
-
+# python update-model-docs.py <model_folder> <docs_folder>
+# push dock to model _common/ path
 s3 = boto3.resource('s3')
 
 

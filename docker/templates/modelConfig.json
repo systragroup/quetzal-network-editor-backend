@@ -1,0 +1,13 @@
+{
+    "version": 0,
+    "attributesChoices": {
+        "links": {},
+        "road_links": {
+            "oneway": [
+                "0",
+                "1"
+            ]
+        }
+    },
+    "units": {}
+}
