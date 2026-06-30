@@ -228,3 +228,41 @@ module "step_function-transit" {
   tags                     = local.transit_api_tags
 }
 
+
+
+# =========
+# wild-turkey API
+# =========
+
+# create ECR isntance with a dummy docker image
+module "ecr-wt" {
+  source    = "../modules/ecr"
+  repo_name = var.wt_api_name
+  tags      = local.wt_api_tags
+}
+
+# create CloudWatch group, lambda function, IAM role and policy for the lambda function. use dummy image.
+module "lambda-wt" {
+  source        = "../modules/lambda"
+  depends_on    = [module.ecr-wt]
+  function_name = var.wt_api_name
+  ecr_repo_name = var.wt_api_name
+  bucket_name   = var.bucket_name
+  role_name     = "lambda-${var.wt_api_name}-role"
+  tags          = local.wt_api_tags
+  memory_size   = var.wt_api_memory_size
+  time_limit    = var.wt_api_time_limit
+  storage_size  = var.wt_api_storage_size
+}
+
+# create lambda invoke role (inline policy) and step funtion with  Hello World definition
+module "step_function-wt" {
+  depends_on               = [module.lambda-wt]
+  source                   = "../modules/step_function"
+  step_function_name       = var.wt_api_name
+  state_machine_definition = var.state_machine_definition
+  step_function_role_name  = "sfn-${var.wt_api_name}-role"
+  lambda_function_name     = var.wt_api_name
+  tags                     = local.wt_api_tags
+}
+

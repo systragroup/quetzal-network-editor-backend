@@ -17,8 +17,6 @@ variable "user_pool_id" {
 }
 
 
-
-
 variable "bucket_name" {
   description = "Name for S3 bucket and lambda function"
   type        = string
@@ -60,7 +58,30 @@ locals {
     "cost:project" : "quetzal",
     "cost:name" : "${var.transit_api_name}"
   }
+  wt_api_tags = {
+    "cost:project" : "quetzal",
+    "cost:name" : "${var.wt_api_name}"
+  }
 }
+
+variable "state_machine_definition" {
+  description = "New state machine definition"
+  type        = string
+  default     = <<EOF
+      {
+        "Comment": "A state machine definition",
+        "StartAt": "FirstState",
+        "States": {
+          "FirstState": {
+            "Type": "Pass",
+            "Result": "Hello, Step Functions!",
+            "End": true
+          }
+        }
+      }
+    EOF
+}
+
 
 # =========
 # GTFS API
@@ -236,20 +257,31 @@ variable "transit_api_storage_size" {
 }
 
 
-variable "state_machine_definition" {
-  description = "New state machine definition"
+# =========
+# Wild-Turkey API
+# =========
+
+variable "wt_api_name" {
+  description = "Name of the transit"
   type        = string
-  default     = <<EOF
-      {
-        "Comment": "A state machine definition",
-        "StartAt": "FirstState",
-        "States": {
-          "FirstState": {
-            "Type": "Pass",
-            "Result": "Hello, Step Functions!",
-            "End": true
-          }
-        }
-      }
-    EOF
+  default     = "quetzal-transit-api"
 }
+
+variable "wt_api_memory_size" {
+  description = "Lambda function ram in mb"
+  default     = 4096
+  type        = number
+}
+
+variable "wt_api_time_limit" {
+  description = "Lambda function time limit in seconds"
+  default     = 600
+  type        = number
+}
+
+variable "wt_api_storage_size" {
+  description = "Lambda function ephemeral storage size in mb"
+  default     = 4096
+  type        = number
+}
+
