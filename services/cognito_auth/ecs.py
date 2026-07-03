@@ -1,0 +1,134 @@
+import os
+import json
+import boto3
+from dotenv import load_dotenv
+from models import ECSTaskStatus, JobStatus, StepStatus
+
+load_dotenv()
+REGION = os.environ['REGION']
+ACCOUNT = os.environ['ACCOUNT_ID']
+ecs = boto3.client('ecs', region_name=REGION)
+s3 = boto3.client('s3', region_name=REGION)
+
+
+def get_step(bucket: str, scenario: str) -> StepStatus:
+	try:
+		response = s3.get_object(Bucket=bucket, Key=os.path.join(scenario, 'status.json'))
+		body = response['Body'].read().decode('utf-8')
+		return StepStatus(**json.loads(body))
+	except:
+		return None
+
+
+def get_cluster_name(function_name: str) -> str:
+	return f'arn:aws:ecs:{REGION}:{ACCOUNT}:cluster/{function_name}'
+
+
+def get_task_definition_name(function_name: str) -> str:
+	return f'arn:aws:ecs:{REGION}:{ACCOUNT}:task-definition/{function_name}-task'
+
+
+def run_ecs(
+	function_name: str, scenario_path: str, launcher_arg: dict, steps: list, variants: list, metadata: dict
+) -> str:
+	cluster = get_cluster_name(function_name)
+	task_definition = get_task_definition_name(function_name)
+
+	response = ecs.run_task(
+		cluster=cluster,
+		launchType='FARGATE',
+		taskDefinition=task_definition,
+		count=1,
+		networkConfiguration={
+			'awsvpcConfiguration': {
+				'subnets': ['subnet-04ff36f2b80327321'],
+				'securityGroups': ['sg-087728e78f1a2c4c2'],
+				'assignPublicIp': 'ENABLED',
+			}
+		},
+		overrides={
+			'containerOverrides': [
+				{
+					'name': function_name,
+					'environment': [
+						{'name': 'scenario_path', 'value': str(scenario_path)},
+						{'name': 'steps', 'value': json.dumps(steps)},
+						{'name': 'launcher_arg', 'value': json.dumps(launcher_arg)},
+						{'name': 'variants', 'value': json.dumps(variants)},
+						{'name': 'metadata', 'value': json.dumps(metadata)},
+					],
+				}
+			]
+		},
+	)
+
+	job_id = response['tasks'][0]['taskArn']
+
+	return job_id
+
+
+def _map_ecs_status(ecs_status: ECSTaskStatus, exit_code: int | None = None) -> JobStatus:
+	if ecs_status in ['PROVISIONING', 'PENDING', 'ACTIVATING']:
+		return JobStatus.PREPARING
+	if ecs_status in ['RUNNING']:
+		return JobStatus.RUNNING
+	if ecs_status in ['DEACTIVATING', 'STOPPING', 'DEPROVISIONING']:
+		return JobStatus.STOPPING
+	if ecs_status in ['STOPPED']:
+		if exit_code == 0:
+			return JobStatus.SUCCESS
+		else:
+			return JobStatus.FAILED
+
+
+def get_ecs_status(function_name: str, job_id: str) -> ECSTaskStatus:
+	cluster = get_cluster_name(function_name)
+	response = ecs.describe_tasks(cluster=cluster, tasks=[job_id])
+	task = response['tasks'][0]
+	container = task['containers'][0]
+	exit_code = container.get('exitCode')
+	# reason = task.get('stoppedReason')
+	# stop_code = task.get('stopCode')
+	status = _map_ecs_status(task['lastStatus'], exit_code)
+
+	return status
+
+
+def stop_ecs_task(function_name: str, job_id: str) -> bool:
+	cluster = get_cluster_name(function_name)
+	try:
+		ecs.stop_task(cluster=cluster, task=job_id, reason='User cancelled job')
+		return True
+	except Exception as err:
+		print(err)
+		return False
+
+
+def _list_ecs_tasks(function_name: str, desired_status: str = 'RUNNING') -> list[str]:
+	cluster = get_cluster_name(function_name)
+	response = ecs.list_tasks(cluster=cluster, desiredStatus=desired_status)
+	return response['taskArns']
+
+
+def get_running_ecs_task(function_name: str, scenario: str) -> str:
+	arn_list = _list_ecs_tasks(function_name, 'RUNNING')
+	if len(arn_list) == 0:
+		return ''
+	cluster = get_cluster_name(function_name)
+	response = ecs.describe_tasks(cluster=cluster, tasks=arn_list)
+	for task in response['tasks']:
+		envs = task['overrides']['containerOverrides'][0]['environment']
+		filtered_envs = [v for v in envs if v['name'] == 'scenario_path']
+		if len(filtered_envs) > 0:
+			running_scen = filtered_envs[0]['value'].strip('/')
+			if running_scen == scenario:
+				return task['taskArn']
+	return ''
+
+
+def get_image_tag(function_name: str) -> str:
+	# get tag of first image: TODO: change if more docker per tasks in the future.
+	task_definition = get_task_definition_name(function_name)
+	task_def = ecs.describe_task_definition(taskDefinition=task_definition)['taskDefinition']
+	container = task_def['containerDefinitions'][0]
+	return container['image'].split(':')[1]

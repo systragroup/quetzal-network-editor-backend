@@ -4,7 +4,9 @@ from fastapi import FastAPI, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import boto3
+from models import RunPayload, Status
 from auth import auth, get_user_policies, get_available_buckets
+from ecs import run_ecs, get_ecs_status, stop_ecs_task, get_running_ecs_task, get_image_tag, get_step
 from typing import Optional, Annotated
 import toml
 
@@ -184,46 +186,58 @@ async def delete_user(payload: Username, Authorization: Annotated[str | None, He
 	return response
 
 
-@app.post('/model/running/{stateMachineArn}/{scenario_path_S3}/')
-async def list_model_running(
-	stateMachineArn: str, scenario_path_S3: str, Authorization: Annotated[str | None, Header()] = None
-):
-	# this function check if a scenario_path_s3 is in the list of running execARN for a stateMachine
-	# running this in fastAPI as we dont want to expose every inputs of every Model.
-	import json
+#
+# Quetzal Api run
+#
 
+
+# start
+@app.post('/run', response_model=str)
+def run_task(payload: RunPayload, Authorization: Annotated[str | None, Header()] = None):
 	auth(Authorization)
-
-	scenario_path_S3 = scenario_path_S3.strip('/')
-	sf_client = boto3.client('stepfunctions')
-	execution_list = sf_client.list_executions(stateMachineArn=stateMachineArn, statusFilter='RUNNING')['executions']
-	# return arn if its in the running list. else return ''
-	for execution in execution_list:
-		arn = execution['executionArn']
-		resp = sf_client.describe_execution(executionArn=arn)
-		scen = json.loads(resp['input'])['scenario_path_S3'].strip('/')
-		if scenario_path_S3 == scen:
-			return arn
-	else:
-		return ''
-
-	# note: could be get /model/status/ and we return the status (not just running)
-	# but this could be long  sf_client.list_executions return 100 last. we dont want to check everything:
-	# we would need to describe every exec (long time!). we could go dynamoDB. maybe a function that sync it
-	# to step function (lambda trigger that white: model,scenario,execARN,status to dynamo)
+	job_id = run_ecs(
+		function_name=payload.function_name,
+		scenario_path=payload.scenario_path,
+		launcher_arg=payload.launcher_arg,
+		steps=payload.steps,
+		variants=payload.variants,
+		metadata=payload.metadata,
+	)
+	return job_id
 
 
-@app.get('/model/version/{function_name}/')
+# stop
+@app.post('/run/{function_name}/job_id/{job_id:path}/stop', response_model=bool)
+def stop_task(function_name: str, job_id: str, Authorization: Annotated[str | None, Header()] = None):
+	auth(Authorization)
+	return stop_ecs_task(function_name=function_name, job_id=job_id)
+
+
+# get status
+@app.get('/run/{function_name}/job_id/{job_id:path}/scenario/{scenario}', response_model=Status)
+def get_status(function_name: str, job_id: str, scenario: str, Authorization: Annotated[str | None, Header()] = None):
+	auth(Authorization)
+	ecs_status = get_ecs_status(function_name=function_name, job_id=job_id)
+	step_status = get_step(function_name, scenario)
+	# TODO: old run status are read.
+	# 1) we should delete them.
+	# 2) we name them with job_id in a status/folder
+	# 3) we name them with job_id in a a bucket for that. no need to scenario/path then
+
+	return Status(job_id=job_id, status=ecs_status, step_status=step_status)
+
+
+# get tasks aready running
+@app.get('/run/{function_name}/scenario/{scenario}/', response_model=str)
+def get_running_task_id(function_name: str, scenario: str, Authorization: Annotated[str | None, Header()] = None):
+	auth(Authorization)
+	return get_running_ecs_task(function_name=function_name, scenario=scenario)
+
+
+@app.get('/run/{function_name}/tag')
 def get_lambda_env_vars(function_name: str, Authorization: Annotated[str | None, Header()] = None):
 	auth(Authorization)
-	lambda_client = boto3.client('lambda')
-	try:
-		response = lambda_client.get_function_configuration(FunctionName=function_name)
-	except lambda_client.exceptions.ResourceNotFoundException:
-		raise HTTPException(status_code=404, detail=f'step function {function_name} not found')
-
-	variables = response.get('Environment', {}).get('Variables', {})
-	return variables.get('IMAGE_TAG', '')
+	return get_image_tag(function_name)
 
 
 handler = Mangum(app=app)

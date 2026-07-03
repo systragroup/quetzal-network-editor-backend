@@ -33,27 +33,27 @@ docker tag $AWS_ECR_REPO_NAME:$TAG $aws_account.dkr.ecr.$aws_region.amazonaws.co
 #Push docker to aws
 docker push $aws_account.dkr.ecr.$aws_region.amazonaws.com/$AWS_ECR_REPO_NAME:$TAG
 
-#update Lambda
-aws lambda update-function-code --region $aws_region --function-name  $AWS_LAMBDA_FUNCTION_NAME \
-    --image-uri $aws_account.dkr.ecr.$aws_region.amazonaws.com/$AWS_LAMBDA_FUNCTION_NAME:$TAG > /dev/null
+# #update Lambda
+# aws lambda update-function-code --region $aws_region --function-name  $AWS_LAMBDA_FUNCTION_NAME \
+#     --image-uri $aws_account.dkr.ecr.$aws_region.amazonaws.com/$AWS_LAMBDA_FUNCTION_NAME:$TAG > /dev/null
 
-echo "updating lambda function ..."
+# echo "updating lambda function ..."
 
-aws lambda wait function-updated --region $aws_region --function-name $AWS_LAMBDA_FUNCTION_NAME
+# aws lambda wait function-updated --region $aws_region --function-name $AWS_LAMBDA_FUNCTION_NAME
 
-echo "updating lambda Tags ..."
-# Update Lamdba configuration to set tag  
-# Get current environment variables
-existing_env=$(aws lambda get-function-configuration \
-  --function-name "$AWS_LAMBDA_FUNCTION_NAME" \
-  --query 'Environment.Variables' \
-  --output json)
+# echo "updating lambda Tags ..."
+# # Update Lamdba configuration to set tag  
+# # Get current environment variables
+# existing_env=$(aws lambda get-function-configuration \
+#   --function-name "$AWS_LAMBDA_FUNCTION_NAME" \
+#   --query 'Environment.Variables' \
+#   --output json)
 
-# update env with new tag
-updated_env=$(jq -c --arg TAG "$TAG" '. // {} | .IMAGE_TAG = $TAG' <<< "$existing_env")
+# # update env with new tag
+# updated_env=$(jq -c --arg TAG "$TAG" '. // {} | .IMAGE_TAG = $TAG' <<< "$existing_env")
 
-aws lambda update-function-configuration \
-   --cli-input-json "$(jq -n --arg fn "$AWS_LAMBDA_FUNCTION_NAME" --argjson vars "$updated_env" \
-     '{FunctionName: $fn, Environment: {Variables: $vars}}')" > /dev/null
+# aws lambda update-function-configuration \
+#    --cli-input-json "$(jq -n --arg fn "$AWS_LAMBDA_FUNCTION_NAME" --argjson vars "$updated_env" \
+#      '{FunctionName: $fn, Environment: {Variables: $vars}}')" > /dev/null
 
 echo "success"

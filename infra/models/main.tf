@@ -39,6 +39,36 @@ module "lambda" {
   time_limit    = var.lambda_time_limit
   storage_size  = var.lambda_storage_size
 }
+
+
+# VPC
+module "vpc" {
+
+  source               = "terraform-aws-modules/vpc/aws"
+  name                 = "quetzal-vpc"
+  cidr                 = "10.0.0.0/16"
+  azs                  = ["${var.aws_region}a", "${var.aws_region}b"]
+  private_subnets      = ["10.0.1.0/24", "10.0.2.0/24"]
+  public_subnets       = ["10.0.101.0/24", "10.0.102.0/24"]
+  enable_dns_hostnames = true
+  tags                 = local.quetzal_tags
+}
+
+
+
+module "ecs" {
+  source        = "../modules/ecs"
+  depends_on    = [module.ecr]
+  function_name = var.quetzal_model_name
+  ecr_repo_name = var.quetzal_model_name
+  bucket_name   = var.quetzal_model_name
+  tags          = local.quetzal_tags
+  memory_size   = var.lambda_memory_size
+  time_limit    = var.lambda_time_limit
+  vpc_id        = module.vpc.vpc_id
+  # cpucpu_units  =  
+}
+
 # create lambda invoke role (inline policy) and step funtion with  Hello World definition
 module "step_function" {
   depends_on              = [module.lambda]
