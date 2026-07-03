@@ -11,13 +11,23 @@ ecs = boto3.client('ecs', region_name=REGION)
 s3 = boto3.client('s3', region_name=REGION)
 
 
-def get_step(bucket: str, scenario: str) -> StepStatus:
+def get_step_status(bucket: str, scenario: str) -> StepStatus:
 	try:
 		response = s3.get_object(Bucket=bucket, Key=os.path.join(scenario, 'status.json'))
 		body = response['Body'].read().decode('utf-8')
 		return StepStatus(**json.loads(body))
 	except:
 		return None
+
+
+def put_step_status(bucket: str, scenario: str, metadata: dict, step_status: StepStatus = StepStatus()):
+	s3.put_object(
+		Body=json.dumps(step_status.model_dump(), indent=2),
+		Bucket=bucket,
+		Key=os.path.join(scenario, 'status.json'),
+		CacheControl='no-cache',
+		Metadata=metadata,
+	)
 
 
 def get_cluster_name(function_name: str) -> str:
@@ -61,7 +71,8 @@ def run_ecs(
 			]
 		},
 	)
-
+	# init step_status to new run
+	put_step_status(function_name, scenario_path, metadata, StepStatus())
 	job_id = response['tasks'][0]['taskArn']
 
 	return job_id

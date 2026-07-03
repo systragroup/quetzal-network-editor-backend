@@ -6,7 +6,7 @@ from pydantic import BaseModel
 import boto3
 from models import RunPayload, Status
 from auth import auth, get_user_policies, get_available_buckets
-from ecs import run_ecs, get_ecs_status, stop_ecs_task, get_running_ecs_task, get_image_tag, get_step
+from ecs import run_ecs, get_ecs_status, stop_ecs_task, get_running_ecs_task, get_image_tag, get_step_status
 from typing import Optional, Annotated
 import toml
 
@@ -218,11 +218,7 @@ def stop_task(function_name: str, job_id: str, Authorization: Annotated[str | No
 def get_status(function_name: str, job_id: str, scenario: str, Authorization: Annotated[str | None, Header()] = None):
 	auth(Authorization)
 	ecs_status = get_ecs_status(function_name=function_name, job_id=job_id)
-	step_status = get_step(function_name, scenario)
-	# TODO: old run status are read.
-	# 1) we should delete them.
-	# 2) we name them with job_id in a status/folder
-	# 3) we name them with job_id in a a bucket for that. no need to scenario/path then
+	step_status = get_step_status(function_name, scenario)
 
 	return Status(job_id=job_id, status=ecs_status, step_status=step_status)
 
