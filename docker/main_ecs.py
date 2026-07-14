@@ -163,19 +163,19 @@ def orcherstrator():
 	if os.path.exists('/tmp/inputs'):  # except inputs
 		shutil.rmtree('/tmp/inputs')
 
-	storage.upload_folder()
-
-	t3 = time.time()
-	print('Upload to S3: {} seconds'.format(t3 - t2))
-
 	# Write model version in info.json
-	# TODO: manage image tag writting.
 	image_tag = os.environ.get('IMAGE_TAG', None)
 	if image_tag:
 		path = Path('/tmp/info.json')
 		data = json.loads(path.read_text()) if path.exists() else {}
 		data['model_tag'] = image_tag
 		path.write_text(json.dumps(data, indent=2))
+
+	storage.upload_folder()
+
+	t3 = time.time()
+	print('Upload to S3: {} seconds'.format(t3 - t2))
+
 	print('total execution time: {} seconds'.format(t3 - t0))
 
 

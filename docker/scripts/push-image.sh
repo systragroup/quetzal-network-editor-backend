@@ -29,7 +29,7 @@ aws ecr get-login-password --region $aws_region | docker login --username AWS --
 
 # tag and push the docker
 ECR_IMAGE="$aws_account.dkr.ecr.$aws_region.amazonaws.com/$AWS_ECR_REPO_NAME:$TAG"
-docker tag $ECR_IMAGE
+docker tag $AWS_ECR_REPO_NAME:$TAG  $ECR_IMAGE
 docker push  $ECR_IMAGE
 
 # get task definition. update it and uupload it
