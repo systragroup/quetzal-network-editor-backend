@@ -26,7 +26,7 @@ data "aws_iam_policy_document" "lambda_logging" {
     effect  = "Allow"
     actions = ["logs:CreateLogGroup"]
     resources = [
-      "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:*"
+      "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:*"
     ]
   }
   statement {

@@ -2,32 +2,13 @@ import os
 import json
 import boto3
 from dotenv import load_dotenv
-from models import ECSTaskStatus, JobStatus, StepStatus
+from models import JobStatus, map_ecs_status
 
 load_dotenv()
 REGION = os.environ['REGION']
 ACCOUNT = os.environ['ACCOUNT_ID']
 ecs = boto3.client('ecs', region_name=REGION)
 s3 = boto3.client('s3', region_name=REGION)
-
-
-def get_step_status(bucket: str, scenario: str) -> StepStatus:
-	try:
-		response = s3.get_object(Bucket=bucket, Key=os.path.join(scenario, 'status.json'))
-		body = response['Body'].read().decode('utf-8')
-		return StepStatus(**json.loads(body))
-	except:
-		return None
-
-
-def put_step_status(bucket: str, scenario: str, metadata: dict, step_status: StepStatus = StepStatus()):
-	s3.put_object(
-		Body=json.dumps(step_status.model_dump(), indent=2),
-		Bucket=bucket,
-		Key=os.path.join(scenario, 'status.json'),
-		CacheControl='no-cache',
-		Metadata=metadata,
-	)
 
 
 def get_cluster_name(function_name: str) -> str:
@@ -71,28 +52,12 @@ def run_ecs(
 			]
 		},
 	)
-	# init step_status to new run
-	put_step_status(function_name, scenario_path, metadata, StepStatus())
 	job_id = response['tasks'][0]['taskArn']
 
 	return job_id
 
 
-def _map_ecs_status(ecs_status: ECSTaskStatus, exit_code: int | None = None) -> JobStatus:
-	if ecs_status in ['PROVISIONING', 'PENDING', 'ACTIVATING']:
-		return JobStatus.PREPARING
-	if ecs_status in ['RUNNING']:
-		return JobStatus.RUNNING
-	if ecs_status in ['DEACTIVATING', 'STOPPING', 'DEPROVISIONING']:
-		return JobStatus.STOPPING
-	if ecs_status in ['STOPPED']:
-		if exit_code == 0:
-			return JobStatus.SUCCESS
-		else:
-			return JobStatus.FAILED
-
-
-def get_ecs_status(function_name: str, job_id: str) -> ECSTaskStatus:
+def get_ecs_status(function_name: str, job_id: str) -> JobStatus:
 	cluster = get_cluster_name(function_name)
 	response = ecs.describe_tasks(cluster=cluster, tasks=[job_id])
 	task = response['tasks'][0]
@@ -100,7 +65,7 @@ def get_ecs_status(function_name: str, job_id: str) -> ECSTaskStatus:
 	exit_code = container.get('exitCode')
 	# reason = task.get('stoppedReason')
 	# stop_code = task.get('stopCode')
-	status = _map_ecs_status(task['lastStatus'], exit_code)
+	status = map_ecs_status(task['lastStatus'], exit_code)
 
 	return status
 
@@ -137,9 +102,26 @@ def get_running_ecs_task(function_name: str, scenario: str) -> str:
 	return ''
 
 
+def list_tasks_revisions(function_name: str) -> list[str]:
+	definition_name = f'{function_name}-task'
+	response = ecs.list_task_definitions(
+		familyPrefix=definition_name,
+		sort='DESC',
+	)
+	return response['taskDefinitionArns']
+
+
 def get_image_tag(function_name: str) -> str:
 	# get tag of first image: TODO: change if more docker per tasks in the future.
 	task_definition = get_task_definition_name(function_name)
 	task_def = ecs.describe_task_definition(taskDefinition=task_definition)['taskDefinition']
-	container = task_def['containerDefinitions'][0]
-	return container['image'].split(':')[1]
+	tags = []  # TODO: can return a list of {revisionARN, imageTag} for front to chose. now only return latest tag
+	revision_list = list_tasks_revisions(function_name)
+	for revision in revision_list:
+		task_def = ecs.describe_task_definition(taskDefinition=revision)['taskDefinition']
+		container = task_def['containerDefinitions'][0]
+		tag = container['image'].split(':')[-1]
+		tags.append(tag)
+		break
+
+	return tags[0]

@@ -27,33 +27,36 @@ aws_region=$(aws configure get region)
 aws ecr get-login-password --region $aws_region | docker login --username AWS --password-stdin \
   $aws_account.dkr.ecr.$aws_region.amazonaws.com
 
-#Tag docker
-docker tag $AWS_ECR_REPO_NAME:$TAG $aws_account.dkr.ecr.$aws_region.amazonaws.com/$AWS_ECR_REPO_NAME:$TAG
+# tag and push the docker
+ECR_IMAGE="$aws_account.dkr.ecr.$aws_region.amazonaws.com/$AWS_ECR_REPO_NAME:$TAG"
+docker tag $ECR_IMAGE
+docker push  $ECR_IMAGE
 
-#Push docker to aws
-docker push $aws_account.dkr.ecr.$aws_region.amazonaws.com/$AWS_ECR_REPO_NAME:$TAG
+# get task definition. update it and uupload it
+task_definition=$(aws ecs describe-task-definition \
+  --task-definition $AWS_ECR_REPO_NAME-task \
+  --query taskDefinition \
+  --output json)
 
-# #update Lambda
-# aws lambda update-function-code --region $aws_region --function-name  $AWS_LAMBDA_FUNCTION_NAME \
-#     --image-uri $aws_account.dkr.ecr.$aws_region.amazonaws.com/$AWS_LAMBDA_FUNCTION_NAME:$TAG > /dev/null
+# change image
+# delete stuff like task definition as a new one will  be created
+task_definition=$(jq -c --arg IMAGE "$ECR_IMAGE" '.containerDefinitions[0].image = $IMAGE  
+       | del(
+        .taskDefinitionArn,
+        .revision,
+        .status,
+        .requiresAttributes,
+        .compatibilities,
+        .registeredAt,
+        .registeredBy
+      )' <<< "$task_definition")
 
-# echo "updating lambda function ..."
+new_task_definition=$(aws ecs register-task-definition \
+  --cli-input-json "$task_definition" \
+  --query 'taskDefinition.taskDefinitionArn' \
+  --output text)
 
-# aws lambda wait function-updated --region $aws_region --function-name $AWS_LAMBDA_FUNCTION_NAME
 
-# echo "updating lambda Tags ..."
-# # Update Lamdba configuration to set tag  
-# # Get current environment variables
-# existing_env=$(aws lambda get-function-configuration \
-#   --function-name "$AWS_LAMBDA_FUNCTION_NAME" \
-#   --query 'Environment.Variables' \
-#   --output json)
-
-# # update env with new tag
-# updated_env=$(jq -c --arg TAG "$TAG" '. // {} | .IMAGE_TAG = $TAG' <<< "$existing_env")
-
-# aws lambda update-function-configuration \
-#    --cli-input-json "$(jq -n --arg fn "$AWS_LAMBDA_FUNCTION_NAME" --argjson vars "$updated_env" \
-#      '{FunctionName: $fn, Environment: {Variables: $vars}}')" > /dev/null
+echo "New task definition: $new_task_definition"
 
 echo "success"

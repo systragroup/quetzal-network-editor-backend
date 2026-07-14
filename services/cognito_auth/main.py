@@ -6,7 +6,8 @@ from pydantic import BaseModel
 import boto3
 from models import RunPayload, Status
 from auth import auth, get_user_policies, get_available_buckets
-from ecs import run_ecs, get_ecs_status, stop_ecs_task, get_running_ecs_task, get_image_tag, get_step_status
+from ecs import run_ecs, get_ecs_status, stop_ecs_task, get_running_ecs_task, get_image_tag
+from step_status import StepStatusController, StepStatus
 from typing import Optional, Annotated
 import toml
 
@@ -203,6 +204,11 @@ def run_task(payload: RunPayload, Authorization: Annotated[str | None, Header()]
 		variants=payload.variants,
 		metadata=payload.metadata,
 	)
+	# init step_status to new run
+	step_status = StepStatusController(
+		bucket_name=payload.function_name, scenario=payload.scenario_path, metadata=payload.metadata
+	)
+	step_status.put_status(StepStatus())
 	return job_id
 
 
@@ -216,9 +222,8 @@ def stop_task(function_name: str, job_id: str, Authorization: Annotated[str | No
 # get status
 @app.get('/run/{function_name}/job_id/{job_id:path}/scenario/{scenario}', response_model=Status)
 def get_status(function_name: str, job_id: str, scenario: str, Authorization: Annotated[str | None, Header()] = None):
-	auth(Authorization)
 	ecs_status = get_ecs_status(function_name=function_name, job_id=job_id)
-	step_status = get_step_status(function_name, scenario)
+	step_status = StepStatusController(bucket_name=function_name, scenario=scenario).get_status()
 
 	return Status(job_id=job_id, status=ecs_status, step_status=step_status)
 
@@ -231,7 +236,7 @@ def get_running_task_id(function_name: str, scenario: str, Authorization: Annota
 
 
 @app.get('/run/{function_name}/tag')
-def get_lambda_env_vars(function_name: str, Authorization: Annotated[str | None, Header()] = None):
+def get_ecs_task_image_tag(function_name: str, Authorization: Annotated[str | None, Header()] = None):
 	auth(Authorization)
 	return get_image_tag(function_name)
 

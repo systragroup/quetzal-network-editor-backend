@@ -14,6 +14,7 @@ class StatusController:
 		self.bucket_name = bucket_name
 		self.scenario = scenario
 		self.metadata = metadata
+		self.status_key = os.path.join(self.scenario, 'status.json')
 
 		session = boto3.Session()
 		self.s3_client = session.client('s3')
@@ -23,13 +24,30 @@ class StatusController:
 		self.s3_client.put_object(
 			Body=json.dumps(status, indent=2),
 			Bucket=self.bucket_name,
-			Key=os.path.join(self.scenario, 'status.json'),
+			Key=self.status_key,
 			CacheControl='no-cache',
 			Metadata=self.metadata,
 		)
 
 
-def download_s3_folder(bucket_name, s3_folder, local_dir='/tmp'):
+class S3Controller:
+	def __init__(self, bucket_name: str, scenario: str, metadata: dict = {}):
+		self.bucket_name = bucket_name
+		self.scenario = scenario
+		self.metadata = metadata
+		self.local_dir = '/tmp'
+
+	def download_folder(self):
+		_download_s3_folder(self.bucket_name, self.scenario, self.local_dir)
+
+	def upload_folder(self):
+		_upload_s3_folder(self.bucket_name, self.scenario, self.local_dir, self.metadata)
+
+	def upload_logs(self, name: str, body: str):
+		_upload_logs_to_s3(self.bucket_name, self.scenario, name, body, self.metadata)
+
+
+def _download_s3_folder(bucket_name, s3_folder, local_dir='/tmp'):
 	"""
 	Download the contents of a folder directory
 	Args:
@@ -38,7 +56,7 @@ def download_s3_folder(bucket_name, s3_folder, local_dir='/tmp'):
 	    local_dir: a relative or absolute directory path in the local file system
 	"""
 	s3 = boto3.resource('s3')
-	bucket = s3.Bucket(bucket_name)
+	bucket = s3.Bucket(bucket_name)  # type: ignore
 	for obj in bucket.objects.filter(Prefix=s3_folder):
 		target = obj.key if local_dir is None else os.path.join(local_dir, os.path.relpath(obj.key, s3_folder))
 		if not os.path.exists(os.path.dirname(target)):
@@ -48,7 +66,7 @@ def download_s3_folder(bucket_name, s3_folder, local_dir='/tmp'):
 		bucket.download_file(obj.key, target)
 
 
-def upload_s3_folder(bucket_name, prefix, root_dir='/tmp', dir='', metadata={}):
+def _upload_s3_folder(bucket_name, prefix, local_dir='/tmp', metadata={}):
 	"""
 	Upload the contents of a folder directory to S3
 	Args:
@@ -57,17 +75,18 @@ def upload_s3_folder(bucket_name, prefix, root_dir='/tmp', dir='', metadata={}):
 	    local_dir: a relative or absolute directory path in the local file system
 	"""
 	s3 = boto3.resource('s3')
-	bucket = s3.Bucket(bucket_name)
-	local_dir = os.path.join(root_dir, dir)
-	if os.path.exists(local_dir):
-		for root, _, files in os.walk(local_dir):
-			for file in files:
-				local_path = os.path.join(root, file)
-				s3_path = os.path.join(root.replace('root_dir', prefix), file)
-				bucket.upload_file(local_path, s3_path, ExtraArgs={'Metadata': metadata})
+	bucket = s3.Bucket(bucket_name)  # type: ignore
+	for root, _, files in os.walk(local_dir):
+		for file in files:
+			local_path = os.path.join(root, file)
+			folder = ''
+			if root != local_dir:  # if not. return '.' and the os.path.join send root files to ./
+				folder = os.path.relpath(root, local_dir)
+			s3_path = os.path.join(prefix, folder, file)
+			bucket.upload_file(local_path, s3_path, ExtraArgs={'Metadata': metadata})
 
 
-def upload_logs_to_s3(bucket_name, prefix, name, body, metadata={}):
+def _upload_logs_to_s3(bucket_name, prefix, name, body, metadata={}):
 	# to logs/log.txt
 	session = boto3.Session()
 	s3 = session.client('s3')
@@ -104,20 +123,23 @@ def format_error(err):
 
 def orcherstrator():
 	kwargs = os.environ
-	steps = json.loads(kwargs.get('steps'))
-	bucket_name = kwargs.get('BUCKET_NAME')
-	scenario_path = kwargs.get('scenario_path')
+	steps = json.loads(kwargs['steps'])
+	bucket_name = kwargs['BUCKET_NAME']
+	scenario_path = kwargs.get('scenario_path', '')
+	launcher_arg = kwargs['launcher_arg']
+
 	metadata = json.loads(kwargs.get('metadata', '{}'))
 
 	os.environ['MPLCONFIGDIR'] = '/tmp/matplotlib-cache'
 	status = StatusController(bucket_name, scenario_path, metadata)
+	storage = S3Controller(bucket_name=bucket_name, scenario=scenario_path, metadata=metadata)
 
 	# Move (and download) model data and inputs to ephemeral storage
 	t0 = time.time()
 	clean_folder()  # Clean ephemeral storage
 	if os.path.exists('/inputs'):  # move docker inputs/ folder
 		shutil.move('./inputs', '/tmp/inputs')
-	download_s3_folder(bucket_name, scenario_path)
+	storage.download_folder()
 	print('Download inputs: {} seconds'.format(time.time() - t0))
 	t1 = time.time()
 
@@ -128,10 +150,9 @@ def orcherstrator():
 		notebook_path = step['path']
 		status.put_status(step_name)
 		try:
-			kwargs['notebook_path'] = notebook_path
-			run_step(kwargs)
+			run_step(notebook=notebook_path, launcher_arg=launcher_arg, storage=storage)
 		except Exception as err:
-			status.put_status(step_name, err)
+			status.put_status(step_name, str(err))
 			raise
 
 	t2 = time.time()
@@ -139,8 +160,10 @@ def orcherstrator():
 	print('steps total time: {} seconds'.format(t2 - t1))
 
 	# upload files to S3)
-	upload_s3_folder(bucket_name, scenario_path, root_dir='/tmp', dir='outputs', metadata=metadata)
-	upload_s3_folder(bucket_name, scenario_path, root_dir='/tmp', dir='model', metadata=metadata)
+	if os.path.exists('/tmp/inputs'):  # except inputs
+		shutil.rmtree('/tmp/inputs')
+
+	storage.upload_folder()
 
 	t3 = time.time()
 	print('Upload to S3: {} seconds'.format(t3 - t2))
@@ -156,16 +179,9 @@ def orcherstrator():
 	print('total execution time: {} seconds'.format(t3 - t0))
 
 
-def run_step(event):
+def run_step(notebook: str, launcher_arg: str, storage: S3Controller):
 	t1 = time.time()
-	print(event)
-	notebook = event['notebook_path']
-	bucket_name = event['BUCKET_NAME']
-	scenario_path = event['scenario_path']
-	arg = event['launcher_arg']
-	metadata = json.loads(event.get('metadata', '{}'))
-
-	print(arg)
+	print(launcher_arg)
 
 	pyfile = os.path.join('/tmp', os.path.basename(notebook).replace('.ipynb', '.py'))
 	if notebook.endswith('.ipynb'):
@@ -175,7 +191,7 @@ def run_step(event):
 	cwd = os.path.dirname(notebook)
 	if cwd == '':
 		cwd = '/'
-	command_list = ['python', pyfile, arg]
+	command_list = ['python', pyfile, launcher_arg]
 	my_env = os.environ.copy()
 	my_env['PYTHONPATH'] = os.pathsep.join(sys.path)
 
@@ -184,32 +200,36 @@ def run_step(event):
 
 	process = Popen(command_list, stdout=PIPE, stderr=STDOUT, env=my_env, cwd=cwd)
 	process.wait()
-	content = process.stdout.read().decode('utf-8')
+
+	stdout = process.stdout.read().decode('utf-8')  # type: ignore
 
 	logfile = os.path.basename(pyfile).replace('.py', '.txt')
-	upload_logs_to_s3(bucket_name, scenario_path, logfile, content, metadata=metadata)
+	storage.upload_logs(logfile, stdout)
+	# clean
+	os.remove(pyfile)
+	if os.path.exists('/tmp/logs'):
+		shutil.rmtree('/tmp/logs')
 
 	t3 = time.time()
 	print('Notebook execution: {} seconds'.format(t3 - t2))
 
-	print(content)
+	print(stdout)
 	# parse error. if return_code!=0 (there is an error)
 	# doule check for [ERROR]. also: do not throw error for end_of_notebook
 	if process.returncode != 0:
-		if 'end_of_notebook' not in content:
-			raise RuntimeError(format_error(content))
+		if 'end_of_notebook' not in stdout:
+			raise RuntimeError(format_error(stdout))
 
 	# TODO: add those to the env_variable for next step.
 	# if notebook return some args. add them
 	# event = get_return_args(event, content)
 
-	return event
+	return None
 
 
 def deep_update(mapping: Dict, *updating_mappings) -> Dict:
 	# update a nested dict
-	# from Pydantic
-	# https://github.com/pydantic/pydantic/blob/fd2991fe6a73819b48c906e3c3274e8e47d0f761/pydantic/utils.py#L200
+	# (from Pydantic) https://github.com/pydantic/pydantic/blob/fd2991fe6a73819b48c906e3c3274e8e47d0f761/pydantic/utils.py#L200
 	updated_mapping = mapping.copy()
 	for updating_mapping in updating_mappings:
 		for k, v in updating_mapping.items():
