@@ -23,6 +23,7 @@ type ECSTaskStatus = Literal[
 	'DEPROVISIONING',
 	'STOPPED',
 ]
+type Infra = Literal['ecs', 'lambda']
 
 
 class JobStatus(Enum):

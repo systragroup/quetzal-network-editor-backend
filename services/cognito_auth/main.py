@@ -4,9 +4,17 @@ from fastapi import FastAPI, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import boto3
-from models import RunPayload, Status, DisplayStep
+from models import RunPayload, Status, DisplayStepsDict, Infra
 from auth import auth, get_user_policies, get_available_buckets
-from ecs import run_ecs, get_ecs_status, stop_ecs_task, get_running_ecs_task, get_image_tag, get_ecs_steps
+from ecs import (
+	run_ecs,
+	get_ecs_status,
+	stop_ecs_task,
+	get_running_ecs_task,
+	get_image_tag,
+	get_ecs_steps,
+	list_tasks_revisions,
+)
 from stepfunctions import (
 	run_stepfunctions,
 	stop_stepfunctions,
@@ -198,13 +206,26 @@ async def delete_user(payload: Username, Authorization: Annotated[str | None, He
 #
 # Quetzal Api run
 #
-on_ecs = True
+
+
+def on_ecs(infra: Infra) -> bool:
+	return infra.lower() == 'ecs'
+
+
+@app.get('/run/{function_name}/infra', response_model=Infra)
+def get_infra(function_name: str):
+	ecs_tasks = list_tasks_revisions(function_name)
+	if len(ecs_tasks) > 0:
+		return 'ecs'
+	else:
+		return 'lambda'
 
 
 # get steps
-@app.get('/run/{function_name}/steps/{choice}', response_model=dict[str, list[DisplayStep]])
-def get_steps_definition(function_name: str, choice: str):
-	if on_ecs:
+@app.get('/{infra}/run/{function_name}/steps', response_model=DisplayStepsDict)
+def get_steps_definition(infra: Infra, function_name: str):
+	print(infra)
+	if on_ecs(infra):
 		res = get_ecs_steps(function_name)
 		return res
 	else:
@@ -213,10 +234,10 @@ def get_steps_definition(function_name: str, choice: str):
 
 
 # start
-@app.post('/run', response_model=str)
-def run_task(payload: RunPayload, Authorization: Annotated[str | None, Header()] = None):
+@app.post('/{infra}/run', response_model=str)
+def run_task(infra: Infra, payload: RunPayload, Authorization: Annotated[str | None, Header()] = None):
 	auth(Authorization)
-	if on_ecs:
+	if on_ecs(infra):
 		job_id = run_ecs(
 			function_name=payload.function_name,
 			scenario_path=payload.scenario_path,
@@ -242,19 +263,19 @@ def run_task(payload: RunPayload, Authorization: Annotated[str | None, Header()]
 
 
 # stop
-@app.post('/run/{function_name}/job_id/{job_id:path}/stop', response_model=bool)
-def stop_task(function_name: str, job_id: str, Authorization: Annotated[str | None, Header()] = None):
+@app.post('/{infra}/run/{function_name}/job_id/{job_id:path}/stop', response_model=bool)
+def stop_task(infra: Infra, function_name: str, job_id: str, Authorization: Annotated[str | None, Header()] = None):
 	auth(Authorization)
-	if on_ecs:
+	if on_ecs(infra):
 		return stop_ecs_task(function_name=function_name, job_id=job_id)
 	else:
 		return stop_stepfunctions(function_name=function_name, job_id=job_id)
 
 
 # get status
-@app.get('/run/{function_name}/job_id/{job_id:path}/scenario/{scenario}', response_model=Status)
-def get_status(function_name: str, job_id: str, scenario: str):
-	if on_ecs:
+@app.get('/{infra}/run/{function_name}/job_id/{job_id:path}/scenario/{scenario}', response_model=Status)
+def get_status(infra: Infra, function_name: str, job_id: str, scenario: str):
+	if on_ecs(infra):
 		ecs_status = get_ecs_status(function_name=function_name, job_id=job_id)
 		step_status = StepStatusController(bucket_name=function_name, scenario=scenario).get_status()
 		return Status(job_id=job_id, status=ecs_status, step_status=step_status)
@@ -264,19 +285,21 @@ def get_status(function_name: str, job_id: str, scenario: str):
 
 
 # get tasks aready running
-@app.get('/run/{function_name}/scenario/{scenario}/', response_model=str)
-def get_running_task_id(function_name: str, scenario: str, Authorization: Annotated[str | None, Header()] = None):
+@app.get('/{infra}/run/{function_name}/scenario/{scenario}/', response_model=str)
+def get_running_task_id(
+	infra: Infra, function_name: str, scenario: str, Authorization: Annotated[str | None, Header()] = None
+):
 	auth(Authorization)
-	if on_ecs:
+	if on_ecs(infra):
 		return get_running_ecs_task(function_name=function_name, scenario=scenario)
 	else:
 		return get_running_stepfunctions(function_name=function_name, scenario=scenario)
 
 
-@app.get('/run/{function_name}/tag')
-def get_ecs_task_image_tag(function_name: str, Authorization: Annotated[str | None, Header()] = None):
+@app.get('/{infra}/run/{function_name}/tag')
+def get_ecs_task_image_tag(infra: Infra, function_name: str, Authorization: Annotated[str | None, Header()] = None):
 	auth(Authorization)
-	if on_ecs:
+	if on_ecs(infra):
 		return get_image_tag(function_name)
 	else:
 		return get_lambda_image_tag(function_name)
