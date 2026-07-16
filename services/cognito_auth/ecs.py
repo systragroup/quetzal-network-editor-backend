@@ -2,7 +2,8 @@ import os
 import json
 import boto3
 from dotenv import load_dotenv
-from models import JobStatus, map_ecs_status
+from models import JobStatus, DisplayStepsDict, DisplayStep, ModelStep
+from mappers import map_ecs_status
 
 load_dotenv()
 REGION = os.environ['REGION']
@@ -126,3 +127,18 @@ def get_image_tag(function_name: str) -> str:
 		break
 
 	return tags[0]
+
+
+def get_ecs_steps(function_name: str) -> DisplayStepsDict:
+	s3 = boto3.client('s3')
+	response = s3.get_object(Bucket=function_name, Key='_common/steps.json')
+	body = response['Body'].read().decode('utf-8')
+
+	all_steps: list[ModelStep] = json.loads(body)
+	steps_dict: DisplayStepsDict = {}
+	for model_steps in all_steps:
+		choice = model_steps['name']
+		steps = model_steps['steps']
+		display_steps: list[DisplayStep] = [{'name': s['name'], 'tasks': [s['name']]} for s in steps]
+		steps_dict[choice] = display_steps
+	return steps_dict

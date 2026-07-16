@@ -4,9 +4,17 @@ from fastapi import FastAPI, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import boto3
-from models import RunPayload, Status
+from models import RunPayload, Status, DisplayStep
 from auth import auth, get_user_policies, get_available_buckets
-from ecs import run_ecs, get_ecs_status, stop_ecs_task, get_running_ecs_task, get_image_tag
+from ecs import run_ecs, get_ecs_status, stop_ecs_task, get_running_ecs_task, get_image_tag, get_ecs_steps
+from stepfunctions import (
+	run_stepfunctions,
+	stop_stepfunctions,
+	get_lambda_image_tag,
+	get_running_stepfunctions,
+	get_stepfunctions_steps,
+	get_stepfunctions_status,
+)
 from step_status import StepStatusController, StepStatus
 from typing import Optional, Annotated
 import toml
@@ -190,21 +198,42 @@ async def delete_user(payload: Username, Authorization: Annotated[str | None, He
 #
 # Quetzal Api run
 #
+on_ecs = True
+
+
+# get steps
+@app.get('/run/{function_name}/steps/{choice}', response_model=dict[str, list[DisplayStep]])
+def get_steps_definition(function_name: str, choice: str):
+	if on_ecs:
+		res = get_ecs_steps(function_name)
+		return res
+	else:
+		res = get_stepfunctions_steps(function_name=function_name)
+		return res
 
 
 # start
 @app.post('/run', response_model=str)
 def run_task(payload: RunPayload, Authorization: Annotated[str | None, Header()] = None):
 	auth(Authorization)
-	job_id = run_ecs(
-		function_name=payload.function_name,
-		scenario_path=payload.scenario_path,
-		launcher_arg=payload.launcher_arg,
-		steps=payload.steps,
-		variants=payload.variants,
-		metadata=payload.metadata,
-	)
-	# init step_status to new run
+	if on_ecs:
+		job_id = run_ecs(
+			function_name=payload.function_name,
+			scenario_path=payload.scenario_path,
+			launcher_arg=payload.launcher_arg,
+			steps=payload.steps,
+			variants=payload.variants,
+			metadata=payload.metadata,
+		)
+	else:
+		job_id = run_stepfunctions(
+			function_name=payload.function_name,
+			scenario_path=payload.scenario_path,
+			launcher_arg=payload.launcher_arg,
+			variants=payload.variants,
+			metadata=payload.metadata,
+		)
+		# init step_status to new run
 	step_status = StepStatusController(
 		bucket_name=payload.function_name, scenario=payload.scenario_path, metadata=payload.metadata
 	)
@@ -216,29 +245,41 @@ def run_task(payload: RunPayload, Authorization: Annotated[str | None, Header()]
 @app.post('/run/{function_name}/job_id/{job_id:path}/stop', response_model=bool)
 def stop_task(function_name: str, job_id: str, Authorization: Annotated[str | None, Header()] = None):
 	auth(Authorization)
-	return stop_ecs_task(function_name=function_name, job_id=job_id)
+	if on_ecs:
+		return stop_ecs_task(function_name=function_name, job_id=job_id)
+	else:
+		return stop_stepfunctions(function_name=function_name, job_id=job_id)
 
 
 # get status
 @app.get('/run/{function_name}/job_id/{job_id:path}/scenario/{scenario}', response_model=Status)
-def get_status(function_name: str, job_id: str, scenario: str, Authorization: Annotated[str | None, Header()] = None):
-	ecs_status = get_ecs_status(function_name=function_name, job_id=job_id)
-	step_status = StepStatusController(bucket_name=function_name, scenario=scenario).get_status()
-
-	return Status(job_id=job_id, status=ecs_status, step_status=step_status)
+def get_status(function_name: str, job_id: str, scenario: str):
+	if on_ecs:
+		ecs_status = get_ecs_status(function_name=function_name, job_id=job_id)
+		step_status = StepStatusController(bucket_name=function_name, scenario=scenario).get_status()
+		return Status(job_id=job_id, status=ecs_status, step_status=step_status)
+	else:
+		status = get_stepfunctions_status(job_id)
+		return status
 
 
 # get tasks aready running
 @app.get('/run/{function_name}/scenario/{scenario}/', response_model=str)
 def get_running_task_id(function_name: str, scenario: str, Authorization: Annotated[str | None, Header()] = None):
 	auth(Authorization)
-	return get_running_ecs_task(function_name=function_name, scenario=scenario)
+	if on_ecs:
+		return get_running_ecs_task(function_name=function_name, scenario=scenario)
+	else:
+		return get_running_stepfunctions(function_name=function_name, scenario=scenario)
 
 
 @app.get('/run/{function_name}/tag')
 def get_ecs_task_image_tag(function_name: str, Authorization: Annotated[str | None, Header()] = None):
 	auth(Authorization)
-	return get_image_tag(function_name)
+	if on_ecs:
+		return get_image_tag(function_name)
+	else:
+		return get_lambda_image_tag(function_name)
 
 
 handler = Mangum(app=app)

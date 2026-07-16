@@ -1,7 +1,16 @@
 from pydantic import BaseModel
 from enum import Enum
-from typing import Optional, Literal
+from typing import Optional, Literal, TypedDict
 from step_status import StepStatus
+
+type StepfunctionsStatus = Literal[
+	'RUNNING',
+	'SUCCEEDED',
+	'FAILED',
+	'TIMED_OUT',
+	'ABORTED',
+	'PENDING_REDRIVE',
+]
 
 
 type ECSTaskStatus = Literal[
@@ -31,25 +40,33 @@ class Status(BaseModel):
 	step_status: Optional[StepStatus] = None
 
 
+# steps.json
+class Step(TypedDict):
+	name: str
+	path: str
+
+
+class ModelStep(TypedDict):
+	name: str
+	steps: list[Step]
+
+
+#
+
+
 class RunPayload(BaseModel):
 	function_name: str
 	scenario_path: str
-	steps: list
+	steps: list[Step]
 	launcher_arg: dict
 	variants: list = []
 	metadata: dict = {}
 
 
-def map_ecs_status(ecs_status: ECSTaskStatus, exit_code: int | None = None) -> JobStatus:
-	if ecs_status in ['PROVISIONING', 'PENDING', 'ACTIVATING']:
-		return JobStatus.PREPARING
-	if ecs_status in ['RUNNING']:
-		return JobStatus.RUNNING
-	if ecs_status in ['DEACTIVATING', 'STOPPING', 'DEPROVISIONING']:
-		return JobStatus.STOPPING
-	if ecs_status in ['STOPPED']:
-		if exit_code == 0:
-			return JobStatus.SUCCESS
-		else:
-			return JobStatus.FAILED
-	return JobStatus.UNKNOWN
+# stuff return to the front to show steps
+class DisplayStep(TypedDict):
+	name: str
+	tasks: list[str]
+
+
+type DisplayStepsDict = dict[str, list[DisplayStep]]
