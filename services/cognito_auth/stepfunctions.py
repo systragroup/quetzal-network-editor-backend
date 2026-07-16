@@ -73,10 +73,14 @@ def get_running_stepfunctions(function_name: str, scenario: str) -> str:
 def get_lambda_image_tag(function_name: str) -> str:
 	response = lambda_client.get_function(FunctionName=function_name)
 	image = response['Code']['ImageUri']
-	print(response)
 	tag = image.split(':')[-1]
-
 	return tag
+
+
+def get_lambda_bucket(function_name: str) -> str:
+	response = lambda_client.get_function(FunctionName=function_name)
+	bucket = response['Configuration']['Environment']['Variables']['BUCKET_NAME']
+	return bucket
 
 
 def _get_stepfunctions_steps(definition, choice: str) -> list[dict]:

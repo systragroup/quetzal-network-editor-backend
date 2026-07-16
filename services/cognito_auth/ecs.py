@@ -115,8 +115,8 @@ def list_tasks_revisions(function_name: str) -> list[str]:
 
 def get_image_tag(function_name: str) -> str:
 	# get tag of first image: TODO: change if more docker per tasks in the future.
-	task_definition = get_task_definition_name(function_name)
-	task_def = ecs.describe_task_definition(taskDefinition=task_definition)['taskDefinition']
+	# task_definition = get_task_definition_name(function_name)
+	# task_def = ecs.describe_task_definition(taskDefinition=task_definition)['taskDefinition']
 	tags = []  # TODO: can return a list of {revisionARN, imageTag} for front to chose. now only return latest tag
 	revision_list = list_tasks_revisions(function_name)
 	for revision in revision_list:
@@ -127,6 +127,14 @@ def get_image_tag(function_name: str) -> str:
 		break
 
 	return tags[0]
+
+
+def get_ecs_bucket(function_name: str) -> str:
+	task_definition = get_task_definition_name(function_name)
+	task_def = ecs.describe_task_definition(taskDefinition=task_definition)['taskDefinition']
+	env_variables = task_def['containerDefinitions'][0]['environment']
+	bucket = [v['value'] for v in env_variables if v['name'] == 'BUCKET_NAME'][0]
+	return bucket
 
 
 def get_ecs_steps(bucket: str) -> DisplayStepsDict:

@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import boto3
 from models import RunPayload, Status, DisplayStepsDict, Infra
-from auth import auth, get_user_policies, get_available_buckets
+from auth import auth, get_user_policies, get_available_buckets, checkAccessToBucket
 from ecs import (
 	run_ecs,
 	get_ecs_status,
@@ -14,6 +14,7 @@ from ecs import (
 	get_image_tag,
 	get_ecs_steps,
 	list_tasks_revisions,
+	get_ecs_bucket,
 )
 from stepfunctions import (
 	run_stepfunctions,
@@ -22,6 +23,7 @@ from stepfunctions import (
 	get_running_stepfunctions,
 	get_stepfunctions_steps,
 	get_stepfunctions_status,
+	get_lambda_bucket,
 )
 from step_status import StepStatusController, StepStatus
 from typing import Optional, Annotated
@@ -236,7 +238,13 @@ def get_steps_definition(infra: Infra, function_name: str):
 # start
 @app.post('/{infra}/run', response_model=str)
 def run_task(infra: Infra, payload: RunPayload, Authorization: Annotated[str | None, Header()]):
-	auth(Authorization)
+	# auth user
+	claims = auth(Authorization)
+	# access control. make sure user has acces to the model (to its bucket)
+	get_bucket = get_ecs_bucket if on_ecs(infra) else get_lambda_bucket
+	bucket = get_bucket(payload.function_name)
+	checkAccessToBucket(claims, bucket)
+
 	if on_ecs(infra):
 		job_id = run_ecs(
 			function_name=payload.function_name,
