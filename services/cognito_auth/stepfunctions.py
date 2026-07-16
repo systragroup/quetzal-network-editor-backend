@@ -18,13 +18,21 @@ def get_stepfunctions_name(function_name: str) -> str:
 
 
 def run_stepfunctions(
-	function_name: str, scenario_path: str, launcher_arg: dict, variants: list, metadata: dict
+	function_name: str,
+	scenario_path: str,
+	launcher_arg: dict,
+	variants: list,
+	metadata: dict,
+	choice: str,
+	authorization: str,
 ) -> str:
 	state_machine_arn = get_stepfunctions_name(function_name)
 	response = stepfunctions.start_execution(
 		stateMachineArn=state_machine_arn,
 		input=json.dumps(
 			{
+				'authorization': authorization,
+				'choice': choice,
 				'scenario_path_S3': scenario_path,
 				'launcher_arg': launcher_arg,
 				'variants': variants,
@@ -139,7 +147,9 @@ def get_stepfunctions_status(job_id: str) -> Status:
 	sfn_status = map_stepfunctions_status(status.get('status'))
 	err = status.get('cause', None)
 
-	events = stepfunctions.get_execution_history(executionArn=job_id, includeExecutionData=False, reverseOrder=True)['events']
+	events = stepfunctions.get_execution_history(executionArn=job_id, includeExecutionData=False, reverseOrder=True)[
+		'events'
+	]
 	current_step = _get_current_step(events)
 	step_status = StepStatus(step=current_step, error=err)
 

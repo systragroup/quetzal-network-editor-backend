@@ -226,7 +226,7 @@ def get_infra(function_name: str):
 def get_steps_definition(infra: Infra, function_name: str):
 	print(infra)
 	if on_ecs(infra):
-		res = get_ecs_steps(function_name)
+		res = get_ecs_steps(bucket=function_name)
 		return res
 	else:
 		res = get_stepfunctions_steps(function_name=function_name)
@@ -246,19 +246,22 @@ def run_task(infra: Infra, payload: RunPayload, Authorization: Annotated[str | N
 			variants=payload.variants,
 			metadata=payload.metadata,
 		)
+		# init step_status to new run
+		step_status = StepStatusController(
+			bucket_name=payload.function_name, scenario=payload.scenario_path, metadata=payload.metadata
+		)
+		step_status.put_status(StepStatus())
 	else:
 		job_id = run_stepfunctions(
 			function_name=payload.function_name,
 			scenario_path=payload.scenario_path,
 			launcher_arg=payload.launcher_arg,
 			variants=payload.variants,
+			choice=payload.choice,
+			authorization=payload.authorization,
 			metadata=payload.metadata,
 		)
-		# init step_status to new run
-	step_status = StepStatusController(
-		bucket_name=payload.function_name, scenario=payload.scenario_path, metadata=payload.metadata
-	)
-	step_status.put_status(StepStatus())
+
 	return job_id
 
 

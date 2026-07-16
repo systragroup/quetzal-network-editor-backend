@@ -58,10 +58,12 @@ class ModelStep(TypedDict):
 class RunPayload(BaseModel):
 	function_name: str
 	scenario_path: str
-	steps: list[Step]
 	launcher_arg: dict
 	variants: list = []
 	metadata: dict = {}
+	steps: list[Step] = []  # for ECS
+	authorization: str = ''  # for sfn
+	choice: str = ''  # for sfn
 
 
 # stuff return to the front to show steps

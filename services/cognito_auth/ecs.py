@@ -129,9 +129,9 @@ def get_image_tag(function_name: str) -> str:
 	return tags[0]
 
 
-def get_ecs_steps(function_name: str) -> DisplayStepsDict:
+def get_ecs_steps(bucket: str) -> DisplayStepsDict:
 	s3 = boto3.client('s3')
-	response = s3.get_object(Bucket=function_name, Key='_common/steps.json')
+	response = s3.get_object(Bucket=bucket, Key='_common/steps.json')
 	body = response['Body'].read().decode('utf-8')
 
 	all_steps: list[ModelStep] = json.loads(body)
