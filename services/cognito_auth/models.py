@@ -62,7 +62,6 @@ class RunPayload(BaseModel):
 	variants: list = []
 	metadata: dict = {}
 	steps: list[Step] = []  # for ECS
-	authorization: str = ''  # for sfn
 	choice: str = ''  # for sfn
 
 

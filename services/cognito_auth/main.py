@@ -235,7 +235,7 @@ def get_steps_definition(infra: Infra, function_name: str):
 
 # start
 @app.post('/{infra}/run', response_model=str)
-def run_task(infra: Infra, payload: RunPayload, Authorization: Annotated[str | None, Header()] = None):
+def run_task(infra: Infra, payload: RunPayload, Authorization: Annotated[str | None, Header()]):
 	auth(Authorization)
 	if on_ecs(infra):
 		job_id = run_ecs(
@@ -258,7 +258,7 @@ def run_task(infra: Infra, payload: RunPayload, Authorization: Annotated[str | N
 			launcher_arg=payload.launcher_arg,
 			variants=payload.variants,
 			choice=payload.choice,
-			authorization=payload.authorization,
+			authorization=Authorization,
 			metadata=payload.metadata,
 		)
 

@@ -10,7 +10,7 @@ HIGHWAY_COLUMNS = ['highway', 'maxspeed', 'lanes', 'name', 'oneway', 'surface']
 
 def handler(event, context):
 	"""
-	event keys :
+	event.launcher_arg.params keys :
 	bbox :(if not using poly) list[float]
 	poly :(if not using bbox) list [[float,float]]
 	elevation: bool
@@ -19,30 +19,25 @@ def handler(event, context):
 	callID : str
 
 	"""
-	print(event)
+	launcher_arg = event['launcher_arg']
+	print(launcher_arg)
+	params = launcher_arg['params']
 	bucket_name = os.environ['BUCKET_NAME']
 
-	if 'splitDirection' in (event.keys()):
-		split_direction = event['splitDirection']
-	else:
-		split_direction = False
+	split_direction = params.get('splitDirection', False)
+	extended_cycleway = params.get('extended_cycleway', False)
 
-	if 'extended_cycleway' in event.keys():
-		extended_cycleway = event['extended_cycleway']
-	else:
-		extended_cycleway = False
-
-	add_elevation = event['elevation']
+	add_elevation = params.get('elevation', True)
 
 	# get bbox or a polygon
-	if 'poly' in (event.keys()):
-		poly = event['poly']
+	if 'poly' in params.keys():
+		poly = params['poly']
 		bbox = get_bbox(poly)
 	else:
-		bbox = event['bbox']
+		bbox = params['bbox']
 		bbox = (*bbox,)  # list to tuple
 		# get requested highway
-	highway_list = event['highway']
+	highway_list = params['highway']
 
 	cycleway_list = None
 	if 'cycleway' in highway_list:
@@ -77,7 +72,7 @@ def handler(event, context):
 	links['b'] = links['b'].apply(lambda x: f'rnode_{x}')
 	nodes.index = [f'rnode_{i}' for i in nodes.index]
 
-	if 'poly' in (event.keys()):
+	if 'poly' in params.keys():
 		print('restrict links to polygon')
 		links = gpd.sjoin(
 			links, gpd.GeoDataFrame(geometry=[Polygon(poly)], crs=4326), how='inner', predicate='intersects'
@@ -89,7 +84,7 @@ def handler(event, context):
 
 	# Outputs
 	print('Saving on S3')
-	folder = event['callID']
+	folder = event['scenario_path_S3']
 	links.to_file(f's3://{bucket_name}/{folder}/links.geojson', driver='GeoJSON')
 	nodes.to_file(f's3://{bucket_name}/{folder}/nodes.geojson', driver='GeoJSON')
 	print('Success!')

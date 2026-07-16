@@ -24,7 +24,7 @@ def run_stepfunctions(
 	variants: list,
 	metadata: dict,
 	choice: str,
-	authorization: str,
+	authorization: str | None,
 ) -> str:
 	state_machine_arn = get_stepfunctions_name(function_name)
 	response = stepfunctions.start_execution(
