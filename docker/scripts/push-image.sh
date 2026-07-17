@@ -1,4 +1,9 @@
-declare QUETZAL_ROOT=../../..
+#!/bin/bash
+
+# *******************************************************
+# This script build and push docker to ECR
+#***********************************************
+
 
 if [ $# -lt 2 ]
 then
@@ -8,7 +13,7 @@ fi
 
 declare MODEL_FOLDER=$1 && shift
 declare TAG=$1 && shift
-
+declare QUETZAL_ROOT=../../..
 # Change working directory
 cd $QUETZAL_ROOT
 
@@ -32,31 +37,4 @@ ECR_IMAGE="$aws_account.dkr.ecr.$aws_region.amazonaws.com/$AWS_ECR_REPO_NAME:$TA
 docker tag $AWS_ECR_REPO_NAME:$TAG  $ECR_IMAGE
 docker push  $ECR_IMAGE
 
-# get task definition. update it and uupload it
-task_definition=$(aws ecs describe-task-definition \
-  --task-definition $AWS_ECR_REPO_NAME-task \
-  --query taskDefinition \
-  --output json)
-
-# change image
-# delete stuff like task definition as a new one will  be created
-task_definition=$(jq -c --arg IMAGE "$ECR_IMAGE" '.containerDefinitions[0].image = $IMAGE  
-       | del(
-        .taskDefinitionArn,
-        .revision,
-        .status,
-        .requiresAttributes,
-        .compatibilities,
-        .registeredAt,
-        .registeredBy
-      )' <<< "$task_definition")
-
-new_task_definition=$(aws ecs register-task-definition \
-  --cli-input-json "$task_definition" \
-  --query 'taskDefinition.taskDefinitionArn' \
-  --output text)
-
-
-echo "New task definition: $new_task_definition"
-
-echo "success"
+echo "$ECR_IMAGE pushed"

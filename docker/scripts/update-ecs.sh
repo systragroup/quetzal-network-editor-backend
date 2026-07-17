@@ -2,7 +2,7 @@
 
 # *******************************************************
 # This script build and push docker on AWS ECR
-# Update Lambda with new image tag
+# Update ECS task definition with new docker image
 #*******************************************************
 
 if [ $# -lt 1 ]
@@ -26,7 +26,7 @@ read TAG
 ./push-image.sh $MODEL_FOLDER $TAG
 
 
-./update-lambda-image.sh $MODEL_FOLDER $TAG
+./update-ecs-task.sh $MODEL_FOLDER $TAG
 
 
 
