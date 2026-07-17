@@ -2,7 +2,6 @@
 
 
 declare AWS_ECR_REPO_NAME=quetzal-osm-api-dev
-declare AWS_LAMBDA_FUNCTION_NAME=quetzal-osm-api-dev
 
 # Prompt user for a tag
 last_tag=$(aws ecr describe-images --repository-name $AWS_ECR_REPO_NAME \
@@ -29,5 +28,5 @@ docker tag $AWS_ECR_REPO_NAME:$TAG $aws_account.dkr.ecr.$aws_region.amazonaws.co
 docker push $aws_account.dkr.ecr.$aws_region.amazonaws.com/$AWS_ECR_REPO_NAME:$TAG
 
 #update Lambda
-aws lambda update-function-code --region $aws_region --function-name  $AWS_LAMBDA_FUNCTION_NAME \
-    --image-uri $aws_account.dkr.ecr.$aws_region.amazonaws.com/$AWS_LAMBDA_FUNCTION_NAME:$TAG > /dev/null
+aws lambda update-function-code --region $aws_region --function-name  $AWS_ECR_REPO_NAME \
+    --image-uri $aws_account.dkr.ecr.$aws_region.amazonaws.com/$AWS_ECR_REPO_NAME:$TAG > /dev/null
