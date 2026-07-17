@@ -23,10 +23,10 @@ echo "this will update : $AWS_ECR_REPO_NAME"
 echo "Enter a docker TAG (last: $last_tag)":
 read TAG
 
-./push-image.sh $MODEL_FOLDER $TAG
+./_push-image.sh $MODEL_FOLDER $TAG
 
 
-./update-lambda-image.sh $MODEL_FOLDER $TAG
+./_update-lambda-image.sh $MODEL_FOLDER $TAG
 
 
 

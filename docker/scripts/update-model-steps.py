@@ -4,11 +4,13 @@ import boto3
 # python update-model-config.py <model_folder>
 # push modelConfig.json to model _common/modelConfig.json
 
-
 session = boto3.Session()
 s3 = session.client('s3')
 
 
+# session = boto3.Session()
+# s3 = session.client('s3')
+# s3.put_object(
 def main():
 	with open('.env') as f:
 		for line in f:
@@ -16,8 +18,9 @@ def main():
 			os.environ[key] = value
 
 	bucket = os.environ['AWS_ECR_REPO_NAME']
+
 	prefix = '_common/'
-	file = 'modelConfig.json'
+	file = 'steps.json'
 
 	if not os.path.exists(file):
 		print(f'Local path does not exists: {file}')
