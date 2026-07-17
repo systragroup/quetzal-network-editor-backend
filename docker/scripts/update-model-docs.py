@@ -22,7 +22,7 @@ def main():
 			key, value = line.strip().split('=', 1)
 			os.environ[key] = value
 
-	bucket = s3.Bucket(os.environ['AWS_BUCKET_NAME'])
+	bucket = s3.Bucket(os.environ['AWS_ECR_REPO_NAME'])
 	prefix = '_common/docs/'
 	# Delete content
 	for obj in bucket.objects.filter(Prefix=prefix):

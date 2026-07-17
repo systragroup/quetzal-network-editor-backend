@@ -20,7 +20,7 @@ def main():
 		for line in f:
 			key, value = line.strip().split('=', 1)
 			os.environ[key] = value
-	bucket = s3.Bucket(os.environ['AWS_BUCKET_NAME'])
+	bucket = s3.Bucket(os.environ['AWS_ECR_REPO_NAME'])
 	for scenario in sys.argv[2:]:
 		lock_key = f'{scenario}/.lock'
 		print(f'locking: {scenario}')
