@@ -8,6 +8,9 @@ from mappers import map_ecs_status
 load_dotenv()
 REGION = os.environ['REGION']
 ACCOUNT = os.environ['ACCOUNT_ID']
+VPC_SUBNET = os.environ['VPC_SUBNET']
+VPC_SECURITY_GROUP = os.environ['VPC_SECURITY_GROUP']
+
 ecs = boto3.client('ecs', region_name=REGION)
 s3 = boto3.client('s3', region_name=REGION)
 
@@ -33,8 +36,8 @@ def run_ecs(
 		count=1,
 		networkConfiguration={
 			'awsvpcConfiguration': {
-				'subnets': ['subnet-04ff36f2b80327321'],
-				'securityGroups': ['sg-087728e78f1a2c4c2'],
+				'subnets': [VPC_SUBNET],
+				'securityGroups': [VPC_SECURITY_GROUP],
 				'assignPublicIp': 'ENABLED',
 			}
 		},

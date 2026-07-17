@@ -73,9 +73,12 @@ resource "aws_lambda_function" "cognito_lambda" {
   }
   environment {
     variables = {
-      APP_CLIENT_ID = var.app_client_id,
-      REGION        = var.region
-      USER_POOL_ID  = var.user_pool_id
+      APP_CLIENT_ID      = var.app_client_id,
+      REGION             = var.region
+      USER_POOL_ID       = var.user_pool_id
+      ACCOUNT_ID         = data.aws_caller_identity.current.account_id
+      VPC_SUBNET         = var.subnet
+      VPC_SECURITY_GROUP = var.security_group
     }
   }
 

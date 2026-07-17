@@ -31,19 +31,6 @@ resource "aws_cloudwatch_log_group" "ecs" {
   tags              = var.tags
 }
 
-resource "aws_security_group" "ecs" {
-  name   = "${var.function_name}ecs-sg"
-  vpc_id = var.vpc_id
-
-  egress {
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-}
-
-
 
 resource "aws_ecs_cluster" "main" {
   name = var.function_name
@@ -91,13 +78,10 @@ resource "aws_ecs_task_definition" "model" {
 
   ])
 
-  # lifecycle {
-  #   ignore_changes = [
-  #     container_definitions
-  #   ]
-  # }
-  # depends_on = [
-  #   aws_cloudwatch_log_group.ecs,
-  # ]
+  lifecycle {
+    ignore_changes = [
+      container_definitions
+    ]
+  }
 }
 

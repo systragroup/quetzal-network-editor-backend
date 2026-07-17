@@ -41,18 +41,16 @@ class Status(BaseModel):
 	step_status: Optional[StepStatus] = None
 
 
-# steps.json
+# orchestrator payload
 class Step(TypedDict):
 	name: str
 	path: str
 
 
+# steps.json
 class ModelStep(TypedDict):
 	name: str
 	steps: list[Step]
-
-
-#
 
 
 class RunPayload(BaseModel):

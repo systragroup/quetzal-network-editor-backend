@@ -54,16 +54,14 @@ resource "aws_lambda_function" "test_lambda" {
   environment {
     variables = {
       BUCKET_NAME = var.bucket_name
-      IMAGE_TAG   = "DUMMY"
     }
   }
 
   lifecycle {
     ignore_changes = [
-      environment.0.variables["IMAGE_TAG"]
+      image_uri
     ]
   }
-
 
 
   depends_on = [
