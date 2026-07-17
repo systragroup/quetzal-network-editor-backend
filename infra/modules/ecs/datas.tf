@@ -21,39 +21,9 @@ data "aws_iam_policy_document" "assume_role" {
   }
 }
 
-# # policy to log on cloudwatch. using the just created log group arn
-# data "aws_iam_policy_document" "lambda_logging" {
-#   version = "2012-10-17"
-#   statement {
-#     effect  = "Allow"
-#     actions = ["logs:CreateLogGroup"]
-#     resources = [
-#       "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:*"
-#     ]
-#   }
-#   statement {
-#     effect = "Allow"
-#     actions = [
-#       "logs:CreateLogStream",
-#       "logs:PutLogEvents"
-#     ]
-#     resources = [
-#       "${aws_cloudwatch_log_group.log_group.arn}:*"
-#     ]
-#   }
-# }
-
 # policy to read and write on the s3 bucket
 data "aws_iam_policy_document" "s3_policy" {
   version = "2012-10-17"
-  statement {
-    effect = "Allow"
-    actions = [
-      "s3:ListAllMyBuckets",
-      "s3:GetBucketLocation"
-    ]
-    resources = ["*"]
-  }
   statement {
     effect    = "Allow"
     actions   = ["s3:ListBucket"]
@@ -68,7 +38,15 @@ data "aws_iam_policy_document" "s3_policy" {
     ]
     resources = ["arn:aws:s3:::${var.bucket_name}/*"]
   }
-
+  statement {
+    effect = "Deny"
+    actions = [
+      "s3:PutObject",
+      "s3:DeleteObject"
+    ]
+    resources = ["arn:aws:s3:::${var.bucket_name}/base/*"]
+  }
 
 }
+
 

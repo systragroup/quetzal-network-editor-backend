@@ -41,6 +41,18 @@ module "lambda" {
 }
 
 
+# create lambda invoke role (inline policy) and step funtion with  Hello World definition
+module "step_function" {
+  depends_on              = [module.lambda]
+  source                  = "../modules/step_function"
+  step_function_name      = var.quetzal_model_name
+  step_function_role_name = "sfn-${var.quetzal_model_name}-role"
+  lambda_function_name    = var.quetzal_model_name
+  tags                    = local.quetzal_tags
+}
+
+
+
 module "ecs" {
   source        = "../modules/ecs"
   depends_on    = [module.ecr]
@@ -52,17 +64,6 @@ module "ecs" {
   time_limit    = var.lambda_time_limit
 }
 
-
-
-# create lambda invoke role (inline policy) and step funtion with  Hello World definition
-module "step_function" {
-  depends_on              = [module.lambda]
-  source                  = "../modules/step_function"
-  step_function_name      = var.quetzal_model_name
-  step_function_role_name = "sfn-${var.quetzal_model_name}-role"
-  lambda_function_name    = var.quetzal_model_name
-  tags                    = local.quetzal_tags
-}
 # create IAM role and policy for Cognito user to access the bucket and other microservices.
 module "user_role" {
   source                   = "./modules/user_role"
