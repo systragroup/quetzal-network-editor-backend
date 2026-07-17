@@ -48,6 +48,9 @@ resource "aws_ecs_task_definition" "model" {
 
   cpu    = var.cpu_units
   memory = var.memory_size
+  ephemeral_storage {
+    size_in_gib = var.ephemeral_storage
+  }
 
 
 

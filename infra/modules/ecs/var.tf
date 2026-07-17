@@ -22,14 +22,15 @@ variable "memory_size" {
   type        = number
 }
 
-variable "time_limit" {
-  description = "fargate function time limit in seconds"
-  default     = 300
-  type        = number
-}
 variable "cpu_units" {
-  description = "fargate cpu units"
+  description = "fargate cpu units (256 [0.25 vcpu] to 32768 [32 vcpu] )"
   default     = 1024
   type        = number
 }
 
+
+variable "ephemeral_storage" {
+  description = "fargate storage in gib 21 to 200 gib"
+  default     = 21
+  type        = number
+}

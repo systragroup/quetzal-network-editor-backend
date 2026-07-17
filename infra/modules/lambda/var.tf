@@ -7,9 +7,9 @@ variable "role_name" {
   type        = string
 }
 variable "tags" {
-    description = "Tags"
-    type        = map
-    default     = {"cost:project"="quetzal"}
+  description = "Tags"
+  type        = map(any)
+  default     = { "cost:project" = "quetzal" }
 }
 variable "ecr_repo_name" {
   description = "Lambda function ECR repo Name"
