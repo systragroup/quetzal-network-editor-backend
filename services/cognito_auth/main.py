@@ -61,6 +61,9 @@ if os.environ.get('DEV', False):
 	origins = [
 		'http://localhost:8081',
 		'https://localhost:8081',
+		'https://systragroup.github.io/quetzal-network-editor-dev/',
+		'https://systragroup.github.io',
+		'https://systragroup.github.io/quetzal-network-editor/',
 	]
 else:
 	origins = [
