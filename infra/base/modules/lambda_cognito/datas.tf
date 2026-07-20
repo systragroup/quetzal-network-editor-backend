@@ -26,7 +26,7 @@ data "aws_iam_policy_document" "lambda_logging" {
     effect  = "Allow"
     actions = ["logs:CreateLogGroup"]
     resources = [
-      "arn:aws:logs:${data.aws_region.current.name}:${data.aws_caller_identity.current.account_id}:*"
+      "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:*"
     ]
   }
   statement {
@@ -41,7 +41,7 @@ data "aws_iam_policy_document" "lambda_logging" {
   }
 }
 
-# policy to read and write on the s3 bucket
+# policy for iam
 data "aws_iam_policy_document" "iam_policy" {
   version = "2012-10-17"
   statement {
@@ -58,7 +58,7 @@ data "aws_iam_policy_document" "iam_policy" {
 }
 
 
-# policy to read and write on the s3 bucket
+# policy for cognito
 data "aws_iam_policy_document" "cognito_policy" {
   version = "2012-10-17"
   statement {
@@ -104,14 +104,18 @@ data "aws_iam_policy_document" "cognito_policy" {
 }
 
 
-# policy to read and write on the s3 bucket
+# policy for stepfunction 
 data "aws_iam_policy_document" "sfn_policy" {
   version = "2012-10-17"
   statement {
     effect = "Allow"
     actions = [
       "states:DescribeExecution",
-      "states:ListExecutions"
+      "states:DescribeStateMachine",
+      "states:GetExecutionHistory",
+      "states:ListExecutions",
+      "states:StartExecution",
+      "states:StopExecution",
     ]
     resources = ["*"]
   }
@@ -120,8 +124,53 @@ data "aws_iam_policy_document" "sfn_policy" {
 data "aws_iam_policy_document" "lambda_policy" {
   version = "2012-10-17"
   statement {
-    effect    = "Allow"
-    actions   = ["lambda:GetFunctionConfiguration"]
+    effect = "Allow"
+    actions = [
+      "lambda:GetFunctionConfiguration",
+      "lambda:GetFunction"
+    ]
+    resources = ["*"]
+  }
+}
+
+
+data "aws_iam_policy_document" "s3_policy" {
+  version = "2012-10-17"
+  statement {
+    effect = "Allow"
+    actions = [
+      "s3:GetObject",
+      "s3:PutObject",
+      "s3:ListBucket"
+    ]
+    resources = ["*"]
+  }
+
+}
+
+
+# policy for stepfunction 
+data "aws_iam_policy_document" "ecs_policy" {
+  version = "2012-10-17"
+  statement {
+    effect = "Allow"
+    actions = [
+      "ecs:RunTask",
+      "ecs:StopTask",
+      "ecs:ListTaskDefinitions",
+      "ecs:ListTasks",
+      "ecs:DescribeTasks",
+      "ecs:DescribeClusters",
+      "ecs:DescribeTaskDefinition"
+    ]
+    resources = ["*"]
+  }
+  statement {
+    effect = "Allow"
+    actions = [
+      "iam:PassRole",
+
+    ]
     resources = ["*"]
   }
 }

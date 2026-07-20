@@ -40,17 +40,17 @@ SET aws_region=%%F
 )
 
 REM update Lambda
-aws lambda update-function-code --region %aws_region% --function-name  %AWS_LAMBDA_FUNCTION_NAME% ^
-    --image-uri %aws_account%.dkr.ecr.%aws_region%.amazonaws.com/%AWS_LAMBDA_FUNCTION_NAME%:%TAG%
+aws lambda update-function-code --region %aws_region% --function-name  %AWS_ECR_REPO_NAME% ^
+    --image-uri %aws_account%.dkr.ecr.%aws_region%.amazonaws.com/%AWS_ECR_REPO_NAME%:%TAG%
 
 echo "updating lambda function ..."
 
-aws lambda wait function-updated --region %aws_region% --function-name  %AWS_LAMBDA_FUNCTION_NAME%
+aws lambda wait function-updated --region %aws_region% --function-name  %AWS_ECR_REPO_NAME%
 
 
 REM 1) get current env variables
 aws lambda get-function-configuration ^
-    --function-name "%AWS_LAMBDA_FUNCTION_NAME%" ^
+    --function-name "%AWS_ECR_REPO_NAME%" ^
     --query "Environment.Variables" ^
     --output json > _env.json
 
@@ -61,7 +61,7 @@ powershell -NoProfile -Command ^
 
 REM  3) update lambda with new tags
 aws lambda update-function-configuration ^
-    --function-name "%AWS_LAMBDA_FUNCTION_NAME%" ^
+    --function-name "%AWS_ECR_REPO_NAME%" ^
     --environment file://_env.json
     
 del _env.json

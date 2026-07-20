@@ -1,7 +1,7 @@
 variable "os" {
-    description = "user os. chose between .bat and .sh script"
-    default     = "linux"
-    type        = string
+  description = "user os. chose between .bat and .sh script"
+  default     = "linux"
+  type        = string
 }
 
 variable "aws_region" {
@@ -29,8 +29,8 @@ variable "cognito_identity_pool_id" {
 }
 
 variable "lambda_memory_size" {
-  description = "Lambda function ram in mb"
-  default     = 4016
+  description = "Lambda function ram in mb. if 0, dont create lambda infra"
+  default     = 0
   type        = number
 }
 
@@ -43,5 +43,29 @@ variable "lambda_time_limit" {
 variable "lambda_storage_size" {
   description = "Lambda function ephemeral storage size in mb"
   default     = 4016
+  type        = number
+}
+
+variable "ecs_memory_size" {
+  description = "ecs fargate ram in mb. 512mib to 244000 mb if 0. dont create ECS infra"
+  default     = 0
+  type        = number
+}
+
+variable "ecs_cpu_units" {
+  description = "fargate cpu units (256 [0.25 vcpu] to 32768 [32 vcpu] )"
+  default     = 1024
+  type        = number
+}
+
+variable "ecs_time_limit" {
+  description = "fargate total execution time limit before exiting (minutes)"
+  default     = 60
+  type        = number
+}
+
+variable "ecs_storage_size" {
+  description = "fargate storage in gib 21 to 200 gib"
+  default     = 21
   type        = number
 }

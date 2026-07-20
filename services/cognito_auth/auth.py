@@ -25,7 +25,7 @@ def verify_cognito_token(token):
 	public_key = None
 	for key in jwks_data['keys']:
 		if key['kid'] == jwt.get_unverified_header(token)['kid']:
-			public_key = jwt.algorithms.RSAAlgorithm.from_jwk(json.dumps(key))
+			public_key = jwt.algorithms.RSAAlgorithm.from_jwk(json.dumps(key))  # type: ignore
 			break
 	if public_key:
 		decoded_token = jwt.decode(
@@ -123,3 +123,16 @@ def get_available_buckets(policies) -> list[str]:
 	#'remove reserved bucket'
 	buckets = [bucket for bucket in buckets if bucket not in ['quetzal-api-bucket', 'quetzal-api-bucket-dev']]
 	return buckets
+
+
+def checkAccessToBucket(claims, model: str):
+	# check if if user has acces to a bucket (model)
+	policies = get_user_policies(claims)
+	for policy in policies:
+		# print(policy[1]['Resource'])
+		if (policy[1]['Effect'] == 'Allow') and (model in str(policy[1]['Resource'])):
+			print('Allowed')
+			break
+
+	else:
+		raise Exception('Access Denied')

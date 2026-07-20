@@ -2,7 +2,6 @@
 
 
 declare AWS_ECR_REPO_NAME=quetzal-api-auth
-declare AWS_LAMBDA_FUNCTION_NAME=quetzal-api-auth
 
 declare DOCKER_IMAGE="public.ecr.aws/lambda/python:3.11"
 
@@ -40,5 +39,5 @@ docker tag $AWS_ECR_REPO_NAME:$TAG $aws_account.dkr.ecr.$aws_region.amazonaws.co
 docker push $aws_account.dkr.ecr.$aws_region.amazonaws.com/$AWS_ECR_REPO_NAME:$TAG
 
 #update Lambda
-aws lambda update-function-code --region $aws_region --function-name  $AWS_LAMBDA_FUNCTION_NAME \
-    --image-uri $aws_account.dkr.ecr.$aws_region.amazonaws.com/$AWS_LAMBDA_FUNCTION_NAME:$TAG > /dev/null
+aws lambda update-function-code --region $aws_region --function-name  $AWS_ECR_REPO_NAME \
+    --image-uri $aws_account.dkr.ecr.$aws_region.amazonaws.com/$AWS_ECR_REPO_NAME:$TAG > /dev/null

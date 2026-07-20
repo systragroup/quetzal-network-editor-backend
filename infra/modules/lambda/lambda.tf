@@ -42,7 +42,7 @@ resource "aws_lambda_function" "test_lambda" {
   role          = aws_iam_role.iam_for_lambda.arn
   architectures = ["x86_64"]
   package_type  = "Image"
-  image_uri     = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${data.aws_region.current.name}.amazonaws.com/${var.ecr_repo_name}:${data.aws_ecr_image.latest.image_tags[0]}"
+  image_uri     = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${data.aws_region.current.region}.amazonaws.com/${var.ecr_repo_name}:${data.aws_ecr_image.latest.image_tags[0]}"
 
   memory_size = var.memory_size
   timeout     = var.time_limit
@@ -54,16 +54,14 @@ resource "aws_lambda_function" "test_lambda" {
   environment {
     variables = {
       BUCKET_NAME = var.bucket_name
-      IMAGE_TAG   = "DUMMY"
     }
   }
 
   lifecycle {
     ignore_changes = [
-      environment.0.variables["IMAGE_TAG"]
+      image_uri
     ]
   }
-
 
 
   depends_on = [

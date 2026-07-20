@@ -1,10 +1,9 @@
 #!/bin/bash
 
 # *******************************************************
-# Ce script permet de mettre a jour le docker sur
-# le repo ECR d'AWS et la fonction lambda.
+# This script build and push docker on AWS ECR
+# Update Lambda with new image tag
 #*******************************************************
-declare QUETZAL_ROOT=../../..
 
 if [ $# -lt 1 ]
 then
@@ -13,7 +12,7 @@ then
 fi
 
 declare MODEL_FOLDER=$1 && shift
-
+declare QUETZAL_ROOT=../../..
 # Load model .env
 source $QUETZAL_ROOT/$MODEL_FOLDER/.env
 
@@ -24,8 +23,11 @@ echo "this will update : $AWS_ECR_REPO_NAME"
 echo "Enter a docker TAG (last: $last_tag)":
 read TAG
 
-# Push Image and update lambda
-./push-image.sh $MODEL_FOLDER $TAG
+./_push-image.sh $MODEL_FOLDER $TAG
+
+
+./_update-lambda-image.sh $MODEL_FOLDER $TAG
+
 
 
 

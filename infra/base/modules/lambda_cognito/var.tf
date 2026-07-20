@@ -7,9 +7,9 @@ variable "role_name" {
   type        = string
 }
 variable "tags" {
-    description = "Tags"
-    type        = map
-    default     = {"cost:project"="quetzal"}
+  description = "Tags"
+  type        = map(any)
+  default     = { "cost:project" = "quetzal" }
 }
 variable "ecr_repo_name" {
   description = "Lambda function ECR repo Name"
@@ -21,6 +21,14 @@ variable "region" {
 }
 variable "app_client_id" {
   description = "aws cognito pool app client id"
+  type        = string
+}
+variable "security_group" {
+  description = "vpc security_group"
+  type        = string
+}
+variable "subnet" {
+  description = "vpc subnet"
   type        = string
 }
 variable "user_pool_id" {
@@ -42,4 +50,9 @@ variable "storage_size" {
   description = "Lambda function ephemeral storage size in mb"
   default     = 4016
   type        = number
+}
+variable "dev" {
+  description = "add localhost to cors"
+  default     = false
+  type        = bool
 }

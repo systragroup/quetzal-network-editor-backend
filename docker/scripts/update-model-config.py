@@ -4,7 +4,9 @@ import boto3
 # python update-model-config.py <model_folder>
 # push modelConfig.json to model _common/modelConfig.json
 
-s3 = boto3.resource('s3')
+
+session = boto3.Session()
+s3 = session.client('s3')
 
 
 def main():
@@ -13,7 +15,7 @@ def main():
 			key, value = line.strip().split('=', 1)
 			os.environ[key] = value
 
-	bucket = s3.Bucket(os.environ['AWS_BUCKET_NAME'])
+	bucket = os.environ['AWS_ECR_REPO_NAME']
 	prefix = '_common/'
 	file = 'modelConfig.json'
 
@@ -23,8 +25,7 @@ def main():
 	print(f'Updating  {file}')
 	s3_name = prefix + file
 	print('upload:', file, 'to', s3_name)
-
-	bucket.upload_file(file, s3_name)
+	s3.upload_file(file, bucket, s3_name)
 
 
 if __name__ == '__main__':

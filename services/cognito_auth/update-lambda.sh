@@ -1,5 +1,4 @@
-declare AWS_ECR_REPO_NAME=quetzal-cognito-api
-declare AWS_LAMBDA_FUNCTION_NAME=quetzal-cognito-api
+declare AWS_ECR_REPO_NAME=quetzal-cognito-api-dev
 
 last_tag=$(aws ecr describe-images --repository-name $AWS_ECR_REPO_NAME \
     --query 'sort_by(imageDetails,& imagePushedAt)[-1].imageTags[0]')
@@ -34,9 +33,9 @@ docker push $aws_account.dkr.ecr.$aws_region.amazonaws.com/$AWS_ECR_REPO_NAME:$T
 
 
     #update Lambda
-aws lambda update-function-code --region $aws_region --function-name  $AWS_LAMBDA_FUNCTION_NAME \
-    --image-uri $aws_account.dkr.ecr.$aws_region.amazonaws.com/$AWS_LAMBDA_FUNCTION_NAME:$TAG > /dev/null
+aws lambda update-function-code --region $aws_region --function-name  $AWS_ECR_REPO_NAME \
+    --image-uri $aws_account.dkr.ecr.$aws_region.amazonaws.com/$AWS_ECR_REPO_NAME:$TAG > /dev/null
 
 echo "updating lambda function ..."
 
-aws lambda wait function-updated --region $aws_region --function-name $AWS_LAMBDA_FUNCTION_NAME
+aws lambda wait function-updated --region $aws_region --function-name $AWS_ECR_REPO_NAME
