@@ -16,6 +16,7 @@ variable "bucket_name" {
   description = "s3 bucket name for env variable"
   type        = string
 }
+
 variable "memory_size" {
   description = "fargate function ram in mb"
   default     = 4096
@@ -25,6 +26,11 @@ variable "memory_size" {
 variable "cpu_units" {
   description = "fargate cpu units (256 [0.25 vcpu] to 32768 [32 vcpu] )"
   default     = 1024
+  type        = number
+}
+
+variable "time_limit" {
+  description = "fargate total execution time limit before timeout (minutes)"
   type        = number
 }
 

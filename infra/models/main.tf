@@ -66,6 +66,7 @@ module "ecs" {
   memory_size       = var.ecs_memory_size
   ephemeral_storage = var.ecs_storage_size
   cpu_units         = var.ecs_cpu_units
+  time_limit        = var.ecs_time_limit
 }
 
 # create IAM role and policy for Cognito user to access the bucket and other microservices.

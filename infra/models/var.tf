@@ -58,6 +58,12 @@ variable "ecs_cpu_units" {
   type        = number
 }
 
+variable "ecs_time_limit" {
+  description = "fargate total execution time limit before exiting (minutes)"
+  default     = 60
+  type        = number
+}
+
 variable "ecs_storage_size" {
   description = "fargate storage in gib 21 to 200 gib"
   default     = 21

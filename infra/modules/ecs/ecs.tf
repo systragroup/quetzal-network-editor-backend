@@ -66,6 +66,10 @@ resource "aws_ecs_task_definition" "model" {
           name  = "BUCKET_NAME"
           value = var.bucket_name
         },
+        {
+          name  = "TIME_LIMIT"
+          value = tostring(var.time_limit)
+        }
       ]
 
       logConfiguration = {
@@ -76,15 +80,13 @@ resource "aws_ecs_task_definition" "model" {
           awslogs-stream-prefix = "ecs"
         }
       }
-      tags = var.tags
     }
-
   ])
 
-  lifecycle {
-    ignore_changes = [
-      container_definitions
-    ]
-  }
+  # lifecycle {
+  #   ignore_changes = [
+  #     container_definitions
+  #   ]
+  # }
 }
 

@@ -3,6 +3,7 @@ import os
 import json
 import boto3
 import shutil
+import signal
 import time
 from typing import Dict
 from subprocess import Popen, PIPE, STDOUT
@@ -253,6 +254,21 @@ def get_return_args(event, content):
 	return event
 
 
+def start_timeout():
+	"""
+	will throw exception when timeout (minutes) is reached
+	"""
+
+	timeout = float(os.environ.get('TIME_LIMIT', '60'))
+
+	def timeout_handler(signum, frame):
+		raise TimeoutError(f'Timeout reached ({timeout} mins)')
+
+	signal.signal(signal.SIGALRM, timeout_handler)
+	signal.alarm(int(timeout * 60))
+
+
 if __name__ == '__main__':
 	print('env', os.environ)
+	start_timeout()
 	orcherstrator()
