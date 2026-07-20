@@ -2,13 +2,7 @@ import os
 import json
 import boto3
 from dotenv import load_dotenv
-from pydantic import BaseModel
-from typing import Optional
-
-
-class StepStatus(BaseModel):
-	step: str = ''
-	error: Optional[str] = None
+from .models import StepStatus
 
 
 load_dotenv()

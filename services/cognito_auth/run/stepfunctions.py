@@ -1,9 +1,9 @@
 import os
 import boto3
 from dotenv import load_dotenv
-from models import DisplayStepsDict, Status
-from step_status import StepStatus
-from mappers import map_stepfunctions_status
+from .models import DisplayStepsDict, Status
+from .models import StepStatus
+from .mappers import map_stepfunctions_status
 import json
 
 load_dotenv()

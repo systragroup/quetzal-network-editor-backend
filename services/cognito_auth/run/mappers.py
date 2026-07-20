@@ -1,4 +1,4 @@
-from models import ECSTaskStatus, StepfunctionsStatus, JobStatus
+from .models import ECSTaskStatus, StepfunctionsStatus, JobStatus
 
 
 def map_ecs_status(ecs_status: ECSTaskStatus, exit_code: int | None = None) -> JobStatus:

@@ -1,7 +1,6 @@
 from pydantic import BaseModel
 from enum import Enum
 from typing import Optional, Literal, TypedDict
-from step_status import StepStatus
 
 type StepfunctionsStatus = Literal[
 	'RUNNING',
@@ -33,6 +32,11 @@ class JobStatus(Enum):
 	SUCCESS = 'SUCCESS'
 	FAILED = 'FAILED'
 	STOPPING = 'STOPPING'
+
+
+class StepStatus(BaseModel):
+	step: str = ''
+	error: Optional[str] = None
 
 
 class Status(BaseModel):

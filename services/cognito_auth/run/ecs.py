@@ -2,8 +2,8 @@ import os
 import json
 import boto3
 from dotenv import load_dotenv
-from models import JobStatus, DisplayStepsDict, DisplayStep, ModelStep
-from mappers import map_ecs_status
+from .models import JobStatus, DisplayStepsDict, DisplayStep, ModelStep
+from .mappers import map_ecs_status
 
 load_dotenv()
 REGION = os.environ['REGION']

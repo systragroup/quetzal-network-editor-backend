@@ -25,7 +25,7 @@ def verify_cognito_token(token):
 	public_key = None
 	for key in jwks_data['keys']:
 		if key['kid'] == jwt.get_unverified_header(token)['kid']:
-			public_key = jwt.algorithms.RSAAlgorithm.from_jwk(json.dumps(key))
+			public_key = jwt.algorithms.RSAAlgorithm.from_jwk(json.dumps(key))  # type: ignore
 			break
 	if public_key:
 		decoded_token = jwt.decode(
