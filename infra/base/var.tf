@@ -4,6 +4,13 @@ variable "aws_region" {
   default     = "ca-central-1"
 }
 
+variable "dev" {
+  description = "dev flag. used to set CORS."
+  type        = bool
+  default     = false
+}
+
+
 variable "app_client_id" {
   description = "set in env.tfvars. cognito app client id"
   type        = string

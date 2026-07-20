@@ -35,23 +35,37 @@ resource "aws_iam_role_policy" "iam_policy" {
 
 # 6) create inline policy with cognito admin role
 resource "aws_iam_role_policy" "cognito_policy" {
-  name   = "COGNITOADMIN${var.function_name}"
+  name   = "COGNITO_ADMIN${var.function_name}"
   role   = aws_iam_role.iam_for_lambda.name
   policy = data.aws_iam_policy_document.cognito_policy.json
 }
 
-# 7) create inline policy with cognito admin role
+# 7) create inline policy with stepfunction access
 resource "aws_iam_role_policy" "sfn_policy" {
-  name   = "SFNADMIN${var.function_name}"
+  name   = "SFN_ADMIN${var.function_name}"
   role   = aws_iam_role.iam_for_lambda.name
   policy = data.aws_iam_policy_document.sfn_policy.json
 }
 
 # 8) create inline policy for reading env on lambda
 resource "aws_iam_role_policy" "lambda_read_policy" {
-  name   = "LAMBDAREAD${var.function_name}"
+  name   = "LAMBDA_READ${var.function_name}"
   role   = aws_iam_role.iam_for_lambda.name
   policy = data.aws_iam_policy_document.lambda_policy.json
+}
+
+# 9) create inline policy with ecs access
+resource "aws_iam_role_policy" "ecs_policy" {
+  name   = "ECS_ADMIN_${var.function_name}"
+  role   = aws_iam_role.iam_for_lambda.name
+  policy = data.aws_iam_policy_document.ecs_policy.json
+}
+
+# 10) create inline policy with ecs access
+resource "aws_iam_role_policy" "s3_policy" {
+  name   = "S3_ADMIN_${var.function_name}"
+  role   = aws_iam_role.iam_for_lambda.name
+  policy = data.aws_iam_policy_document.s3_policy.json
 }
 
 
@@ -79,6 +93,7 @@ resource "aws_lambda_function" "cognito_lambda" {
       ACCOUNT_ID         = data.aws_caller_identity.current.account_id
       VPC_SUBNET         = var.subnet
       VPC_SECURITY_GROUP = var.security_group
+      DEV                = var.dev
     }
   }
 

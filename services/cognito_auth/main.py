@@ -4,7 +4,7 @@ from fastapi import FastAPI, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import boto3
-from models import RunPayload, Status, DisplayStepsDict, Infra
+from models import RunPayload, Status, DisplayStepsDict, Infra, PollPayload, StopPayload
 from auth import auth, get_user_policies, get_available_buckets, checkAccessToBucket
 from ecs import (
 	run_ecs,
@@ -32,6 +32,8 @@ import toml
 
 from middlewares.exception import ExceptionHandlerMiddleware
 
+type AuthHeader = Annotated[str, Header()]
+
 
 class User(BaseModel):
 	username: str
@@ -51,16 +53,19 @@ client = boto3.client('cognito-idp')
 pyproject = toml.load('pyproject.toml')
 VERSION = pyproject['tool']['poetry']['version']
 
+if os.environ.get('DEV', False):
+	origins = [
+		'http://localhost:8081',
+		'https://localhost:8081',
+	]
+else:
+	origins = [
+		'https://systragroup.github.io/quetzal-network-editor-dev/',
+		'https://systragroup.github.io',
+		'https://systragroup.github.io/quetzal-network-editor/',
+	]
 
 app = FastAPI()
-# this is for AXIOS in vueJS (local dev)
-origins = [
-	'http://localhost:8081',
-	'https://localhost:8081',
-	'https://systragroup.github.io/quetzal-network-editor-dev/',
-	'https://systragroup.github.io',
-	'https://systragroup.github.io/quetzal-network-editor/',
-]
 
 app.add_middleware(
 	CORSMiddleware, allow_origins=origins, allow_credentials=True, allow_methods=['*'], allow_headers=['*']
@@ -71,7 +76,7 @@ app.add_middleware(ExceptionHandlerMiddleware)
 
 @app.get('/')
 def read_root():
-	return {'Hello': 'Quenedi Cognito API'}
+	return {'Hello': 'Quenedi API'}
 
 
 @app.get('/version')
@@ -79,7 +84,7 @@ def version():
 	return {'version': VERSION}
 
 
-@app.get('/buckets/')
+@app.get('/buckets')
 async def get_buckets(Authorization: Annotated[str | None, Header()] = None):
 	claims = auth(Authorization)
 	policies = get_user_policies(claims)
@@ -107,14 +112,14 @@ def get_user_groups(claims) -> list[str]:
 		return available_groups
 
 
-@app.get('/listGroups/')
+@app.get('/listGroups')
 async def list_groups(Authorization: Annotated[str | None, Header()] = None):
 	claims = auth(Authorization)
 	groups = get_user_groups(claims)
 	return groups
 
 
-@app.get('/listUser/{group}/')
+@app.get('/listUser/{group}')
 async def list_users(group: str, Authorization: Annotated[str | None, Header()] = None):
 	claims = auth(Authorization)
 	if group not in get_user_groups(claims):
@@ -138,7 +143,7 @@ async def list_users(group: str, Authorization: Annotated[str | None, Header()] 
 	return users
 
 
-@app.post('/setUserPassword/')
+@app.post('/setUserPassword')
 async def set_password(payload: User, Authorization: Annotated[str | None, Header()] = None):
 	claims = auth(Authorization)
 
@@ -156,7 +161,7 @@ async def set_password(payload: User, Authorization: Annotated[str | None, Heade
 	return response
 
 
-@app.post('/createUser/{group}/')
+@app.post('/createUser/{group}')
 async def create_user(group: str, payload: User, Authorization: Annotated[str | None, Header()] = None):
 	claims = auth(Authorization)
 	user_group = claims['cognito:groups'][0]
@@ -188,7 +193,7 @@ async def create_user(group: str, payload: User, Authorization: Annotated[str | 
 	return response
 
 
-@app.post('/deleteUser/')
+@app.post('/deleteUser')
 async def delete_user(payload: Username, Authorization: Annotated[str | None, Header()] = None):
 	claims = auth(Authorization)
 	user_group = claims['cognito:groups'][0]
@@ -214,6 +219,7 @@ def on_ecs(infra: Infra) -> bool:
 	return infra.lower() == 'ecs'
 
 
+# get the infra (ecs or lambda)
 @app.get('/run/{function_name}/infra', response_model=Infra)
 def get_infra(function_name: str):
 	ecs_tasks = list_tasks_revisions(function_name)
@@ -223,10 +229,18 @@ def get_infra(function_name: str):
 		return 'lambda'
 
 
+@app.get('/run/{function_name}/{infra}/tag')
+def get_ecs_task_image_tag(function_name: str, infra: Infra, Authorization: AuthHeader):
+	auth(Authorization)
+	if on_ecs(infra):
+		return get_image_tag(function_name)
+	else:
+		return get_lambda_image_tag(function_name)
+
+
 # get steps
-@app.get('/{infra}/run/{function_name}/steps', response_model=DisplayStepsDict)
-def get_steps_definition(infra: Infra, function_name: str):
-	print(infra)
+@app.get('/run/{function_name}/{infra}/steps', response_model=DisplayStepsDict)
+def get_steps_definition(function_name: str, infra: Infra):
 	if on_ecs(infra):
 		res = get_ecs_steps(bucket=function_name)
 		return res
@@ -236,18 +250,18 @@ def get_steps_definition(infra: Infra, function_name: str):
 
 
 # start
-@app.post('/{infra}/run', response_model=str)
-def run_task(infra: Infra, payload: RunPayload, Authorization: Annotated[str | None, Header()]):
+@app.post('/run/{function_name}/{infra}', response_model=str)
+def run_task(function_name: str, infra: Infra, payload: RunPayload, Authorization: AuthHeader):
 	# auth user
 	claims = auth(Authorization)
 	# access control. make sure user has acces to the model (to its bucket)
 	get_bucket = get_ecs_bucket if on_ecs(infra) else get_lambda_bucket
-	bucket = get_bucket(payload.function_name)
+	bucket = get_bucket(function_name)
 	checkAccessToBucket(claims, bucket)
 
 	if on_ecs(infra):
 		job_id = run_ecs(
-			function_name=payload.function_name,
+			function_name=function_name,
 			scenario_path=payload.scenario_path,
 			launcher_arg=payload.launcher_arg,
 			steps=payload.steps,
@@ -256,12 +270,12 @@ def run_task(infra: Infra, payload: RunPayload, Authorization: Annotated[str | N
 		)
 		# init step_status to new run
 		step_status = StepStatusController(
-			bucket_name=payload.function_name, scenario=payload.scenario_path, metadata=payload.metadata
+			bucket_name=function_name, scenario=payload.scenario_path, metadata=payload.metadata
 		)
 		step_status.put_status(StepStatus())
 	else:
 		job_id = run_stepfunctions(
-			function_name=payload.function_name,
+			function_name=function_name,
 			scenario_path=payload.scenario_path,
 			launcher_arg=payload.launcher_arg,
 			variants=payload.variants,
@@ -274,9 +288,10 @@ def run_task(infra: Infra, payload: RunPayload, Authorization: Annotated[str | N
 
 
 # stop
-@app.post('/{infra}/run/{function_name}/job_id/{job_id:path}/stop', response_model=bool)
-def stop_task(infra: Infra, function_name: str, job_id: str, Authorization: Annotated[str | None, Header()] = None):
+@app.post('/run/{function_name}/{infra}/stop', response_model=bool)
+def stop_task(function_name: str, infra: Infra, payload: StopPayload, Authorization: AuthHeader):
 	auth(Authorization)
+	job_id = payload.job_id
 	if on_ecs(infra):
 		return stop_ecs_task(function_name=function_name, job_id=job_id)
 	else:
@@ -284,11 +299,15 @@ def stop_task(infra: Infra, function_name: str, job_id: str, Authorization: Anno
 
 
 # get status
-@app.get('/{infra}/run/{function_name}/job_id/{job_id:path}/scenario/{scenario}', response_model=Status)
-def get_status(infra: Infra, function_name: str, job_id: str, scenario: str):
+@app.post('/run/{function_name}/{infra}/status', response_model=Status)
+def get_status(function_name: str, infra: Infra, payload: PollPayload):
+	job_id = payload.job_id
+	scenario = payload.scenario_path
 	if on_ecs(infra):
 		ecs_status = get_ecs_status(function_name=function_name, job_id=job_id)
+		# print(ecs_status)
 		step_status = StepStatusController(bucket_name=function_name, scenario=scenario).get_status()
+		# print(step_status)
 		return Status(job_id=job_id, status=ecs_status, step_status=step_status)
 	else:
 		status = get_stepfunctions_status(job_id)
@@ -296,24 +315,13 @@ def get_status(infra: Infra, function_name: str, job_id: str, scenario: str):
 
 
 # get tasks aready running
-@app.get('/{infra}/run/{function_name}/scenario/{scenario}/', response_model=str)
-def get_running_task_id(
-	infra: Infra, function_name: str, scenario: str, Authorization: Annotated[str | None, Header()] = None
-):
+@app.get('/run/{function_name}/{infra}/job_id/{scenario}', response_model=str)
+def get_running_job_id(function_name: str, infra: Infra, scenario: str, Authorization: AuthHeader):
 	auth(Authorization)
 	if on_ecs(infra):
 		return get_running_ecs_task(function_name=function_name, scenario=scenario)
 	else:
 		return get_running_stepfunctions(function_name=function_name, scenario=scenario)
-
-
-@app.get('/{infra}/run/{function_name}/tag')
-def get_ecs_task_image_tag(infra: Infra, function_name: str, Authorization: Annotated[str | None, Header()] = None):
-	auth(Authorization)
-	if on_ecs(infra):
-		return get_image_tag(function_name)
-	else:
-		return get_lambda_image_tag(function_name)
 
 
 handler = Mangum(app=app)

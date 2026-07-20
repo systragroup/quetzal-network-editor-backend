@@ -51,3 +51,8 @@ variable "storage_size" {
   default     = 4016
   type        = number
 }
+variable "dev" {
+  description = "add localhost to cors"
+  default     = false
+  type        = bool
+}

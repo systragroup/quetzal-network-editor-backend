@@ -38,6 +38,7 @@ module "ecr-cognito" {
 module "lambda-cognito" {
   source         = "./modules/lambda_cognito"
   depends_on     = [module.ecr-cognito]
+  dev            = var.dev
   function_name  = var.cognito_api_name
   ecr_repo_name  = var.cognito_api_name
   region         = var.aws_region

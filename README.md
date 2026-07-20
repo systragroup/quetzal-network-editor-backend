@@ -2,10 +2,11 @@
 
 This repo host all the infrastructure and scripts for:
  * quetzal models
- * Cognito FastApi
- * Stepfunction Auth
+ * Quetzal-cognito-api (FastAPI)
+ * Stepfunction Auth (not needed anymore)
  * microservices
 
+* NOTE: Quetzal-cognito-api is now used to communicate with the models and microservices (launch/ describe/ stop/ poll)
 
 # INFRA (base)
  * Quetzal-osm-api
@@ -16,8 +17,9 @@ This repo host all the infrastructure and scripts for:
  * Quetzal-transit-api
 
  TODO:
- * quetzal-stepfunction-auth (used in quetzal model step function definition for authorization step.)
  * Api gateway
+ * Cognito
+ * Rename Quetzal-cognito-api to quetzal-backend or something.
 
 # INFRA (base)
  There are 2 workspaces default (prod) and dev.

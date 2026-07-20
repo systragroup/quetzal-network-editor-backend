@@ -54,13 +54,21 @@ class ModelStep(TypedDict):
 
 
 class RunPayload(BaseModel):
-	function_name: str
 	scenario_path: str
 	launcher_arg: dict
 	variants: list = []
 	metadata: dict = {}
 	steps: list[Step] = []  # for ECS
 	choice: str = ''  # for sfn
+
+
+class PollPayload(BaseModel):
+	scenario_path: str
+	job_id: str
+
+
+class StopPayload(BaseModel):
+	job_id: str
 
 
 # stuff return to the front to show steps
