@@ -1,10 +1,14 @@
+## [5.0.1] (2026-07-21)
+### changes
+* propagate tags from task_definition when lauching ECS task
+
 ## [5.0.0] (2026-07-20)
 ### features
 * add ECS support for model execution
 * start/poll/stop/describes are now all available on this API (stepfunction or ECS).
 * get image tag from lambda / ECS task definition. no more need for an env variable.
 
-### changes:
+### changes
 * refactor cognito functions
 
 

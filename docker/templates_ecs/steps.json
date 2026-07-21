@@ -9,19 +9,6 @@
             {
                 "name": "step 2",
                 "path": "notebooks/2_model/test_2.ipynb"
-            },
-            {
-                "name": "step error",
-                "path": "notebooks/2_model/test_3.ipynb"
-            }
-        ]
-    },
-    {
-        "name": "simple",
-        "steps": [
-            {
-                "name": "step 2",
-                "path": "notebooks/2_model/test_2.ipynb"
             }
         ]
     }

@@ -33,6 +33,7 @@ def run_ecs(
 		cluster=cluster,
 		launchType='FARGATE',
 		taskDefinition=task_definition,
+		propagateTags='TASK_DEFINITION',
 		count=1,
 		networkConfiguration={
 			'awsvpcConfiguration': {
