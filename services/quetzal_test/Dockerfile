@@ -4,9 +4,11 @@ FROM amazonlinux:2 AS build
 FROM python:3.12 AS runtime
 COPY --from=build /usr/lib64/libexpat.so.1 /lib64/
 
-ARG QUETZAL_MODEL_NAME='./'
+# docker env variable inject in build
+ARG QUETZAL_MODEL_NAME
 ENV QUETZAL_MODEL_NAME=$QUETZAL_MODEL_NAME
-
+ARG IMAGE_TAG
+ENV IMAGE_TAG=$IMAGE_TAG
 # Install dependancies and add them to paths
 COPY ./${QUETZAL_MODEL_NAME}/requirements.txt .
 RUN pip install -r requirements.txt 

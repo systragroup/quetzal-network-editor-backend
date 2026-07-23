@@ -25,4 +25,4 @@ for /f %%i in ('aws ecr describe-images --repository-name %AWS_ECR_REPO_NAME% ^
 set /p TAG="Enter a docker TAG (last: !last_tag!): "
 
 :: Push Image and update lambda
-call push-image.bat "%MODEL_FOLDER%" "%TAG%"
+call _push-image.bat "%MODEL_FOLDER%" "%TAG%"

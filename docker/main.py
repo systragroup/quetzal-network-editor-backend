@@ -21,7 +21,7 @@ def download_s3_folder(bucket_name, s3_folder, local_dir='/tmp'):
 	    s3_folder: the folder path in the s3 bucket
 	    local_dir: a relative or absolute directory path in the local file system
 	"""
-	bucket = s3.Bucket(bucket_name)
+	bucket = s3.Bucket(bucket_name)  # type: ignore
 	for obj in bucket.objects.filter(Prefix=s3_folder):
 		target = obj.key if local_dir is None else os.path.join(local_dir, os.path.relpath(obj.key, s3_folder))
 		if not os.path.exists(os.path.dirname(target)):
@@ -39,7 +39,7 @@ def upload_s3_folder(bucket_name, prefix, local_dir='/tmp', metadata={}):
 	    s3_folder: the folder path in the s3 bucket
 	    local_dir: a relative or absolute directory path in the local file system
 	"""
-	bucket = s3.Bucket(bucket_name)
+	bucket = s3.Bucket(bucket_name)  # type: ignore
 	for root, _, files in os.walk(local_dir):
 		for file in files:
 			local_path = os.path.join(root, file)
@@ -87,6 +87,7 @@ def format_error(err):
 
 def handler(event, context):
 	t0 = time.time()
+	print(os.environ)
 	notebook = event['notebook_path']
 	print(event)
 	bucket_name = os.environ['BUCKET_NAME']
@@ -127,7 +128,7 @@ def handler(event, context):
 	process = Popen(command_list, stdout=PIPE, stderr=STDOUT, env=my_env, cwd=cwd)
 	process.wait(timeout=800)  # for lambda. max time is 900. so wait max 800
 
-	content = process.stdout.read().decode('utf-8')
+	content = process.stdout.read().decode('utf-8')  # type: ignore
 
 	logfile = os.path.basename(pyfile).replace('.py', '.txt')
 	upload_logs_to_s3(bucket_name, event['scenario_path_S3'], logfile, content, metadata=event.get('metadata', {}))

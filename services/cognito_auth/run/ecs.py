@@ -28,11 +28,11 @@ def run_ecs(
 ) -> str:
 	cluster = get_cluster_name(function_name)
 	task_definition = get_task_definition_name(function_name)
-	IMAGE_TAG = get_image_tag(function_name)
 	response = ecs.run_task(
 		cluster=cluster,
 		launchType='FARGATE',
 		taskDefinition=task_definition,
+		propagateTags='TASK_DEFINITION',
 		count=1,
 		networkConfiguration={
 			'awsvpcConfiguration': {
@@ -51,7 +51,6 @@ def run_ecs(
 						{'name': 'launcher_arg', 'value': json.dumps(launcher_arg)},
 						{'name': 'variants', 'value': json.dumps(variants)},
 						{'name': 'metadata', 'value': json.dumps(metadata)},
-						{'name': 'IMAGE_TAG', 'value': IMAGE_TAG},
 					],
 				}
 			]

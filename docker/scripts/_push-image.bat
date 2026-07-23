@@ -17,9 +17,11 @@ FOR /F "tokens=*" %%i in ('type "%MODEL_FOLDER%\.env"') do (SET "%%i")
 
 
 
-docker build --provenance=false --build-arg QUETZAL_MODEL_NAME=%MODEL_FOLDER% ^
-  -t %AWS_ECR_REPO_NAME%:%TAG% ^
-  -f %MODEL_FOLDER%/Dockerfile .
+docker build --provenance=false ^
+    --build-arg QUETZAL_MODEL_NAME=%MODEL_FOLDER% ^
+    --build-arg MODEL_TAG=%TAG% ^
+    -t %AWS_ECR_REPO_NAME%:%TAG% ^
+    -f %MODEL_FOLDER%/Dockerfile .
 
 REM Connect to ECR
 FOR /F "tokens=* USEBACKQ" %%F IN (`aws sts get-caller-identity --query "Account" --output text`) DO (
@@ -46,28 +48,6 @@ aws lambda update-function-code --region %aws_region% --function-name  %AWS_ECR_
 echo "updating lambda function ..."
 
 aws lambda wait function-updated --region %aws_region% --function-name  %AWS_ECR_REPO_NAME%
-
-
-echo "updating lambda Tags ..."
-
-REM 1) get current env variables and write a temporary json file (_env.json)
-aws lambda get-function-configuration ^
-    --function-name "%AWS_ECR_REPO_NAME%" ^
-    --query "Environment.Variables" ^
-    --output json > _env.json
-
-REM 2) update env with new tag. and rename {Variable:{..}} for the was command to work
-powershell -NoProfile -Command ^
-    "$env = Get-Content '_env.json' | ConvertFrom-Json; if ($null -eq $env) { $env = @{} }; $env.IMAGE_TAG = '%TAG%'; @{Variables=$env} | ConvertTo-Json -Compress | Set-Content '_env.json'"
-
-REM  3) update lambda with new tags
-aws lambda update-function-configuration ^
-    --function-name "%AWS_ECR_REPO_NAME%" ^
-    --environment file://_env.json
-    
-REM delete the temp json tile
-del _env.json 
-
 
 echo "success"
 

@@ -15,13 +15,15 @@ declare MODEL_FOLDER=$1 && shift
 declare TAG=$1 && shift
 declare QUETZAL_ROOT=../../..
 # Change working directory
+
 cd $QUETZAL_ROOT
 
 # Load model .env
 source $MODEL_FOLDER/.env
 
-# Build docker image  # new docker version create metadata that are not supported by lambda 
-docker build  --provenance=false --build-arg QUETZAL_MODEL_NAME=$MODEL_FOLDER \
+docker build  --provenance=false \
+  --build-arg QUETZAL_MODEL_NAME=$MODEL_FOLDER \
+  --build-arg IMAGE_TAG=$TAG \
   -t $AWS_ECR_REPO_NAME:$TAG \
   -f $MODEL_FOLDER/Dockerfile .
 

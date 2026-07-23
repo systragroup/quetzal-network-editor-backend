@@ -47,25 +47,6 @@ echo "updating lambda function ..."
 
 aws lambda wait function-updated --region %aws_region% --function-name  %AWS_ECR_REPO_NAME%
 
-
-REM 1) get current env variables
-aws lambda get-function-configuration ^
-    --function-name "%AWS_ECR_REPO_NAME%" ^
-    --query "Environment.Variables" ^
-    --output json > _env.json
-
-
-REM 2) update env with new tag
-powershell -NoProfile -Command ^
-    "$env = Get-Content '_env.json' | ConvertFrom-Json; if ($null -eq $env) { $env = @{} }; $env.IMAGE_TAG = '%TAG%'; @{Variables=$env} | ConvertTo-Json -Compress | Set-Content '_env.json'"
-
-REM  3) update lambda with new tags
-aws lambda update-function-configuration ^
-    --function-name "%AWS_ECR_REPO_NAME%" ^
-    --environment file://_env.json
-    
-del _env.json
-
 echo success 
 
 endlocal
