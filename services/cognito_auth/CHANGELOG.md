@@ -1,3 +1,7 @@
+## [5.0.2] (2026-07-23)
+### changes
+* IMAGE_TAG env variable is now defined in the docker build (dockerfile). no more injection when lauching ECS task
+
 ## [5.0.1] (2026-07-21)
 ### changes
 * propagate tags from task_definition when lauching ECS task

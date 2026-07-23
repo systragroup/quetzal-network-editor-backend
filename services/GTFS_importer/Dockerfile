@@ -1,8 +1,11 @@
 # docker build need to be run from folder containing model and quetzal library
 FROM public.ecr.aws/lambda/python:3.12
 
-ARG QUETZAL_MODEL_NAME='./'
+# docker env variable inject in build
+ARG QUETZAL_MODEL_NAME
 ENV QUETZAL_MODEL_NAME=$QUETZAL_MODEL_NAME
+ARG IMAGE_TAG
+ENV IMAGE_TAG=$IMAGE_TAG
 
 # libexpat.so.1 is needed but not present in lambda when we install quetzal-transport directly (midrodnf or dnf)
 RUN microdnf install -y expat && microdnf clean all 

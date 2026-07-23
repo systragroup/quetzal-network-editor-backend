@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "cognito-auth"
-version = "5.0.1"
+version = "5.0.2"
 description = ""
 authors = ["simon boivin <sboivin@systra.com>"]
 readme = "README.md"
