@@ -251,9 +251,13 @@ def get_status(function_name: str, infra: Infra, payload: PollPayload):
 	job_id = payload.job_id
 	scenario = payload.scenario_path
 	if on_ecs(infra):
-		ecs_status = get_ecs_status(function_name=function_name, job_id=job_id)
-		# print(ecs_status)
+		# TODO. better status payload: like add exit code and exit_reason, not just a error string.
+		ecs_status, stopped_reason = get_ecs_status(function_name=function_name, job_id=job_id)
 		step_status = StepStatusController(bucket_name=function_name, scenario=scenario).get_status()
+		if stopped_reason:
+			step_error = step_status.error
+			error = f'{stopped_reason}: {step_error}' if step_error else stopped_reason
+			step_status.error = error
 		# print(step_status)
 		return Status(job_id=job_id, status=ecs_status, step_status=step_status)
 	else:

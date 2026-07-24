@@ -29,10 +29,10 @@ class StepStatusController:
 			Metadata=self.metadata,
 		)
 
-	def get_status(self) -> StepStatus | None:
+	def get_status(self) -> StepStatus:
 		try:
 			response = s3.get_object(Bucket=self.bucket_name, Key=self.status_key)
 			body = response['Body'].read().decode('utf-8')
 			return StepStatus(**json.loads(body))
 		except:
-			return None
+			return StepStatus()

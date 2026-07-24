@@ -61,17 +61,23 @@ def run_ecs(
 	return job_id
 
 
-def get_ecs_status(function_name: str, job_id: str) -> JobStatus:
+def get_ecs_status(function_name: str, job_id: str) -> tuple[JobStatus, str | None]:
 	cluster = get_cluster_name(function_name)
 	response = ecs.describe_tasks(cluster=cluster, tasks=[job_id])
 	task = response['tasks'][0]
 	container = task['containers'][0]
 	exit_code = container.get('exitCode')
-	# reason = task.get('stoppedReason')
-	# stop_code = task.get('stopCode')
+	stopped_reason = task.get('stoppedReason')  # when user cancel execution
+	container_reason = container.get('reason')  # actual container error (like outOfMemory)
+
 	status = map_ecs_status(task['lastStatus'], exit_code)
 
-	return status
+	if container_reason:
+		return status, container_reason
+	elif stopped_reason:
+		return status, stopped_reason
+	else:
+		return status, None
 
 
 def stop_ecs_task(function_name: str, job_id: str) -> bool:

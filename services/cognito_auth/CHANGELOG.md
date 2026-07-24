@@ -1,3 +1,7 @@
+## [5.1.1] (2026-07-24)
+### changes
+* for ECS, return the reason the container / task exited in the error. (ex: user stopped, OutOfMemoryError)
+
 ## [5.1.0] (2026-07-24)
 ### changes
 * admin role now uses a single policy with prefix to have access to all quetzal-* buckets. need to list all buckets from s3.listBuckets(). we had reach the max number of inline policy for a role. needed a new method
