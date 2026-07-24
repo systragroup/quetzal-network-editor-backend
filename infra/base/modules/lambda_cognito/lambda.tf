@@ -55,6 +55,14 @@ resource "aws_iam_role_policy" "lambda_read_policy" {
 }
 
 
+# 10) create inline policy with s3 access
+resource "aws_iam_role_policy" "s3_policy" {
+  name   = "S3_ADMIN_${var.function_name}"
+  role   = aws_iam_role.iam_for_lambda.name
+  policy = data.aws_iam_policy_document.s3_policy.json
+}
+
+
 # 6) create the Lambda function with dummy image from ECR
 resource "aws_lambda_function" "cognito_lambda" {
   # If the file is not in the current working directory you will need to include a

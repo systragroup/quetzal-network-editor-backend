@@ -125,3 +125,23 @@ data "aws_iam_policy_document" "lambda_policy" {
     resources = ["*"]
   }
 }
+
+
+data "aws_iam_policy_document" "s3_policy" {
+  version = "2012-10-17"
+  statement {
+    effect = "Allow"
+    actions = [
+      "s3:GetObject",
+      "s3:PutObject",
+      "s3:ListBucket"
+    ]
+    resources = ["*"]
+  }
+  statement {
+    effect    = "Allow"
+    actions   = ["s3:ListAllMyBuckets"]
+    resources = ["*"]
+  }
+
+}

@@ -13,6 +13,7 @@ APP_CLIENT_ID = os.environ['APP_CLIENT_ID']
 REGION = os.environ['REGION']
 
 iam_client = boto3.client('iam')
+s3Client = boto3.client('s3')
 
 
 def verify_cognito_token(token):
@@ -114,12 +115,22 @@ def get_available_buckets(policies) -> list[str]:
 	s3_policies = []
 	for policy in policies:
 		if policy[1]['Effect'] == 'Allow':
-			if isinstance(policy[1]['Resource'], list):
-				s3_policies = s3_policies + policy[1]['Resource']
+			resource = policy[1]['Resource']
+			if isinstance(resource, list):
+				s3_policies = s3_policies + resource
 			else:
-				s3_policies.append(policy[1]['Resource'])
+				s3_policies.append(resource)
 	# remove arn:aws:s3::: and /*
 	buckets = [pol[13:-2] for pol in s3_policies]
+
+	# get all bucket on S3 starting with quetzal-
+	resp = s3Client.list_buckets(Prefix='quetzal-')['Buckets']
+	all_buckets = [r['Name'] for r in resp]
+	reserved_buckets = ['quetzal-api-bucket', 'quetzal-api-bucket-dev', 'quetzal-tf-state']
 	#'remove reserved bucket'
-	buckets = [bucket for bucket in buckets if bucket not in ['quetzal-api-bucket', 'quetzal-api-bucket-dev']]
-	return buckets
+	all_buckets = [name for name in all_buckets if name not in reserved_buckets]
+
+	if 'quetzal-*' in buckets:
+		return all_buckets  # admin. all buckets
+	else:
+		return [name for name in buckets if name in all_buckets]
