@@ -20,6 +20,14 @@ module "s3" {
   tags        = local.general_tags
 }
 
+#TODO: only create one
+module "admin_role" {
+  #count       = var.create_storage ? 1 : 0
+  source                   = "./modules/admin_role"
+  cognito_identity_pool_id = var.cognito_identity_pool_id
+}
+
+
 module "vpc" {
   source = "./modules/vpc/"
   tags   = { "cost:project" : "quetzal" }

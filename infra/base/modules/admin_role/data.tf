@@ -1,7 +1,3 @@
-# this policy is already created and attached. give acces to quetzal-api-bucket"
-data "aws_iam_policy" "config" {
-  name = "s3_read_quetzal_config"
-}
 
 # Role trusted policy
 data "aws_iam_policy_document" "assume_role" {
@@ -30,13 +26,16 @@ data "aws_iam_policy_document" "assume_role" {
 }
 
 
+
+
+
 # policy to read and write on the s3 bucket
-data "aws_iam_policy_document" "user_s3_policy" {
+data "aws_iam_policy_document" "admin_s3_policy" {
   version = "2012-10-17"
   statement {
     effect    = "Allow"
     actions   = ["s3:ListBucket"]
-    resources = ["arn:aws:s3:::${var.bucket_name}"]
+    resources = ["arn:aws:s3:::quetzal-*"]
   }
   statement {
     effect = "Allow"
@@ -45,7 +44,7 @@ data "aws_iam_policy_document" "user_s3_policy" {
       "s3:PutObject",
       "s3:DeleteObject"
     ]
-    resources = ["arn:aws:s3:::${var.bucket_name}/*"]
+    resources = ["arn:aws:s3:::quetzal-*/*"]
   }
   statement {
     effect = "Deny"
@@ -53,11 +52,10 @@ data "aws_iam_policy_document" "user_s3_policy" {
       "s3:PutObject",
       "s3:DeleteObject"
     ]
-    resources = ["arn:aws:s3:::${var.bucket_name}/base/*"]
+    resources = ["arn:aws:s3:::quetzal-*/base/*"]
   }
 
 }
-
 
 
 

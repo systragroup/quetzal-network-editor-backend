@@ -36,6 +36,13 @@ variable "create_storage" {
   default     = true
 }
 
+variable "cognito_identity_pool_id" {
+  description = "cognito_identity_pool_id for IAM policy"
+  type        = string
+  default     = "ca-central-1:b6298c0d-1089-4287-8770-4e9803847671"
+}
+
+
 locals {
   general_tags = {
     "cost:project" : "quetzal",
