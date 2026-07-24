@@ -58,3 +58,36 @@ data "aws_iam_policy_document" "user_s3_policy" {
 
 }
 
+
+
+# policy to read and write on the s3 bucket
+data "aws_iam_policy_document" "admin_s3_policy" {
+  version = "2012-10-17"
+  statement {
+    effect    = "Allow"
+    actions   = ["s3:ListBucket"]
+    resources = ["arn:aws:s3:::quetzal-*"]
+  }
+  statement {
+    effect = "Allow"
+    actions = [
+      "s3:GetObject",
+      "s3:PutObject",
+      "s3:DeleteObject"
+    ]
+    resources = ["arn:aws:s3:::quetzal-*/*"]
+  }
+  statement {
+    effect = "Deny"
+    actions = [
+      "s3:PutObject",
+      "s3:DeleteObject"
+    ]
+    resources = ["arn:aws:s3:::quetzal-*/base/*"]
+  }
+
+}
+
+
+
+

@@ -26,8 +26,27 @@ resource "aws_iam_role_policy_attachment" "user_config_policy" {
 
 
 # 6) add inline policy to access the s3 Bucket in the admin policy
-resource "aws_iam_role_policy" "s3_policy" {
-  name   = "inline_${var.s3_policy_name}"
-  role   = var.admin_role_name
-  policy = data.aws_iam_policy_document.user_s3_policy.json
+# resource "aws_iam_role_policy" "s3_policy" {
+#   name   = "inline_${var.s3_policy_name}"
+#   role   = var.admin_role_name
+#   policy = data.aws_iam_policy_document.user_s3_policy.json
+# }
+
+
+
+# 2) create S3 policy for the bucket
+resource "aws_iam_policy" "admin_s3_policy" {
+  name        = "test-quetzal-admin-policy"
+  description = "IAM policy to access all S3 bucket"
+  policy      = data.aws_iam_policy_document.admin_s3_policy.json
 }
+
+# resource "aws_iam_role_policy_attachment" "admin_s3_policy" {
+#   role       = var.admin_role_name
+#   policy_arn = aws_iam_policy.admin_s3_policy.arn
+# }
+
+# resource "aws_iam_role_policy_attachment" "admin_s3_policy" {
+#   role       = aws_iam_role.iam_for_user.name
+#   policy_arn = aws_iam_policy.admin_s3_policy.arn
+# }
