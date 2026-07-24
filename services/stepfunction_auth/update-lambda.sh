@@ -24,7 +24,7 @@ fi
 
 
 # Build docker image
-docker build -t $AWS_ECR_REPO_NAME:$TAG .
+docker build --provenance=false -t $AWS_ECR_REPO_NAME:$TAG .
 
 # Connect to AWS ECR
 aws_account=$(aws sts get-caller-identity | jq '.Account' | sed 's/"//g')
