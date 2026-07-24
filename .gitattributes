@@ -1,2 +1,2 @@
 infra/base/environments/**/* filter=secret diff=secret
-*.env filter=secret diff=secret
+services/cognito_auth/.env filter=secret diff=secret
