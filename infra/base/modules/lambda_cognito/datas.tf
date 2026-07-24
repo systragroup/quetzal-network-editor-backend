@@ -145,6 +145,11 @@ data "aws_iam_policy_document" "s3_policy" {
     ]
     resources = ["*"]
   }
+  statement {
+    effect    = "Allow"
+    actions   = ["s3:ListAllMyBuckets"]
+    resources = ["*"]
+  }
 
 }
 

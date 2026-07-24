@@ -1,3 +1,7 @@
+## [5.1.0] (2026-07-24)
+### changes
+* admin role now uses a single policy with prefix to have access to all quetzal-* buckets. need to list all buckets from s3.listBuckets(). we had reach the max number of inline policy for a role. needed a new method
+
 ## [5.0.2] (2026-07-23)
 ### changes
 * IMAGE_TAG env variable is now defined in the docker build (dockerfile). no more injection when lauching ECS task
