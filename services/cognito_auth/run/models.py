@@ -1,6 +1,7 @@
-from pydantic import BaseModel
 from enum import Enum
-from typing import Optional, Literal, TypedDict
+from typing import Literal, TypedDict
+
+from pydantic import BaseModel
 
 type StepfunctionsStatus = Literal[
 	'RUNNING',
@@ -36,13 +37,13 @@ class JobStatus(Enum):
 
 class StepStatus(BaseModel):
 	step: str = ''
-	error: Optional[str] = None
+	error: str | None = None
 
 
 class Status(BaseModel):
 	job_id: str
 	status: JobStatus
-	step_status: Optional[StepStatus] = None
+	step_status: StepStatus | None = None
 
 
 # orchestrator payload
@@ -59,7 +60,7 @@ class ModelStep(TypedDict):
 
 class RunPayload(BaseModel):
 	scenario_path: str
-	launcher_arg: dict
+	params: dict
 	variants: list = []
 	metadata: dict = {}
 	steps: list[Step] = []  # for ECS

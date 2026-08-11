@@ -1,3 +1,10 @@
+## [5.2.0] (2026-08-11)
+### changes
+* Change RunPayload. pass params directly instead of launcher args. we create launcher_arg = {'params': params, 'training_folder': '/tmp'} here
+
+### Bug fixes
+* auth to microservice buckets was failing.
+
 ## [5.1.1] (2026-07-24)
 ### changes
 * for ECS, return the reason the container / task exited in the error. (ex: user stopped, OutOfMemoryError)

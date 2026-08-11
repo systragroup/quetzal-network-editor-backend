@@ -1,52 +1,50 @@
 import os
-from mangum import Mangum
-from fastapi import FastAPI, HTTPException, Header
+from typing import Annotated
+
+import toml
+from auth import auth, checkAccessToBucket, get_available_buckets, get_user_policies
+from fastapi import FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from mangum import Mangum
+from middlewares.exception import ExceptionHandlerMiddleware
 from pydantic import BaseModel
-from run.models import RunPayload, Status, DisplayStepsDict, Infra, PollPayload, StopPayload
-from auth import auth, get_user_policies, get_available_buckets, checkAccessToBucket
+from run.ecs import (
+	get_ecs_bucket,
+	get_ecs_status,
+	get_ecs_steps,
+	get_image_tag,
+	get_running_ecs_task,
+	list_tasks_revisions,
+	run_ecs,
+	stop_ecs_task,
+)
+from run.models import DisplayStepsDict, Infra, PollPayload, RunPayload, Status, StopPayload
+from run.step_status import StepStatus, StepStatusController
+from run.stepfunctions import (
+	get_lambda_bucket,
+	get_lambda_image_tag,
+	get_running_stepfunctions,
+	get_stepfunctions_status,
+	get_stepfunctions_steps,
+	run_stepfunctions,
+	stop_stepfunctions,
+)
 from users.cognito import (
+	create_user,
+	delete_user_by_username,
 	get_user_groups,
 	list_group_users,
 	set_user_password,
-	create_user,
-	delete_user_by_username,
 )
-
-from run.ecs import (
-	run_ecs,
-	get_ecs_status,
-	stop_ecs_task,
-	get_running_ecs_task,
-	get_image_tag,
-	get_ecs_steps,
-	list_tasks_revisions,
-	get_ecs_bucket,
-)
-from run.stepfunctions import (
-	run_stepfunctions,
-	stop_stepfunctions,
-	get_lambda_image_tag,
-	get_running_stepfunctions,
-	get_stepfunctions_steps,
-	get_stepfunctions_status,
-	get_lambda_bucket,
-)
-from run.step_status import StepStatusController, StepStatus
-from typing import Optional, Annotated
-import toml
-
-
-from middlewares.exception import ExceptionHandlerMiddleware
 
 type AuthHeader = Annotated[str, Header()]
 
 
 class User(BaseModel):
 	username: str
-	given_name: Optional[str] = None
-	family_name: Optional[str] = None
-	email: Optional[str] = None
+	given_name: str | None = None
+	family_name: str | None = None
+	email: str | None = None
 	password: str
 
 
@@ -56,7 +54,6 @@ class Username(BaseModel):
 
 pyproject = toml.load('pyproject.toml')
 VERSION = pyproject['tool']['poetry']['version']
-
 if os.environ.get('DEV', False):
 	origins = [
 		'http://localhost:8081',
@@ -102,6 +99,9 @@ async def get_buckets(Authorization: AuthHeader):
 	claims = auth(Authorization)
 	policies = get_user_policies(claims)
 	buckets = get_available_buckets(policies)
+	reserved_buckets = ['quetzal-api-bucket', 'quetzal-api-bucket-dev']
+	#'remove reserved bucket'
+	buckets = [name for name in buckets if name not in reserved_buckets]
 	buckets.sort()
 	return buckets
 
@@ -210,7 +210,7 @@ def run_task(function_name: str, infra: Infra, payload: RunPayload, Authorizatio
 		job_id = run_ecs(
 			function_name=function_name,
 			scenario_path=payload.scenario_path,
-			launcher_arg=payload.launcher_arg,
+			params=payload.params,
 			steps=payload.steps,
 			variants=payload.variants,
 			metadata=payload.metadata,
@@ -224,7 +224,7 @@ def run_task(function_name: str, infra: Infra, payload: RunPayload, Authorizatio
 		job_id = run_stepfunctions(
 			function_name=function_name,
 			scenario_path=payload.scenario_path,
-			launcher_arg=payload.launcher_arg,
+			params=payload.params,
 			variants=payload.variants,
 			choice=payload.choice,
 			authorization=Authorization,

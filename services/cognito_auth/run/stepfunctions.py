@@ -1,10 +1,11 @@
+import json
 import os
+
 import boto3
 from dotenv import load_dotenv
-from .models import DisplayStepsDict, Status
-from .models import StepStatus
+
 from .mappers import map_stepfunctions_status
-import json
+from .models import DisplayStepsDict, Status, StepStatus
 
 load_dotenv()
 REGION = os.environ['REGION']
@@ -20,12 +21,15 @@ def get_stepfunctions_name(function_name: str) -> str:
 def run_stepfunctions(
 	function_name: str,
 	scenario_path: str,
-	launcher_arg: dict,
+	params: dict,
 	variants: list,
 	metadata: dict,
 	choice: str,
 	authorization: str | None,
 ) -> str:
+
+	launcher_arg = {'params': params, 'training_folder': '/tmp'}
+
 	state_machine_arn = get_stepfunctions_name(function_name)
 	response = stepfunctions.start_execution(
 		stateMachineArn=state_machine_arn,
@@ -66,8 +70,7 @@ def get_running_stepfunctions(function_name: str, scenario: str) -> str:
 		scen = json.loads(resp['input'])['scenario_path_S3'].strip('/')
 		if scenario == scen:
 			return arn
-	else:
-		return ''
+	return ''
 
 
 def get_lambda_image_tag(function_name: str) -> str:
@@ -142,8 +145,7 @@ def _get_current_step(events) -> str:
 		event_type = event['type']
 		if event_type == 'TaskStateEntered':
 			return event['stateEnteredEventDetails']['name']
-	else:
-		return ''
+	return ''
 
 
 def get_stepfunctions_status(job_id: str) -> Status:

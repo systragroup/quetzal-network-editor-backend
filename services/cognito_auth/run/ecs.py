@@ -1,9 +1,11 @@
-import os
 import json
+import os
+
 import boto3
 from dotenv import load_dotenv
-from .models import JobStatus, DisplayStepsDict, DisplayStep, ModelStep
+
 from .mappers import map_ecs_status
+from .models import DisplayStep, DisplayStepsDict, JobStatus, ModelStep
 
 load_dotenv()
 REGION = os.environ['REGION']
@@ -23,9 +25,10 @@ def get_task_definition_name(function_name: str) -> str:
 	return f'arn:aws:ecs:{REGION}:{ACCOUNT}:task-definition/{function_name}-task'
 
 
-def run_ecs(
-	function_name: str, scenario_path: str, launcher_arg: dict, steps: list, variants: list, metadata: dict
-) -> str:
+def run_ecs(function_name: str, scenario_path: str, params: dict, steps: list, variants: list, metadata: dict) -> str:
+
+	launcher_arg = {'params': params, 'training_folder': '/tmp'}
+
 	cluster = get_cluster_name(function_name)
 	task_definition = get_task_definition_name(function_name)
 	response = ecs.run_task(

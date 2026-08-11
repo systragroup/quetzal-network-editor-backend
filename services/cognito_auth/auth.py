@@ -1,11 +1,11 @@
-import os
-import requests
-import jwt
 import json
-import boto3
-from fastapi import HTTPException
+import os
 
+import boto3
+import jwt
+import requests
 from dotenv import load_dotenv
+from fastapi import HTTPException
 
 load_dotenv()
 USER_POOL_ID = os.environ['USER_POOL_ID']
@@ -126,9 +126,8 @@ def get_available_buckets(policies) -> list[str]:
 	# get all bucket on S3 starting with quetzal-
 	resp = s3Client.list_buckets(Prefix='quetzal-')['Buckets']
 	all_buckets = [r['Name'] for r in resp]
-	reserved_buckets = ['quetzal-api-bucket', 'quetzal-api-bucket-dev', 'quetzal-tf-state']
-	#'remove reserved bucket'
-	all_buckets = [name for name in all_buckets if name not in reserved_buckets]
+	# remove reserved bucket
+	all_buckets = [name for name in all_buckets if name not in ['quetzal-tf-state']]
 
 	if 'quetzal-*' in buckets:
 		return all_buckets  # admin. all buckets
@@ -140,6 +139,7 @@ def checkAccessToBucket(claims, model: str):
 	# check if user has access to a bucket (model)
 	policies = get_user_policies(claims)
 	available_buckets = get_available_buckets(policies)
+	print(model, available_buckets)
 	if model in available_buckets:
 		print('Allowed')
 	else:
