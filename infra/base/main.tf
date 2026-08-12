@@ -22,15 +22,16 @@ module "s3" {
 
 #TODO: only create one
 module "admin_role" {
-  #count       = var.create_storage ? 1 : 0
+  count                    = var.create_storage ? 0 : 1
   source                   = "./modules/admin_role"
   cognito_identity_pool_id = var.cognito_identity_pool_id
 }
 
 
 module "vpc" {
-  source = "./modules/vpc/"
-  tags   = { "cost:project" : "quetzal" }
+  environment = var.environment
+  source      = "./modules/vpc/"
+  tags        = { "cost:project" : "quetzal" }
 }
 
 # =========

@@ -1,7 +1,7 @@
 # VPC
 module "vpc" {
   source               = "terraform-aws-modules/vpc/aws"
-  name                 = "quetzal-vpc"
+  name                 = "quetzal-vpc-${var.environment}"
   cidr                 = "10.0.0.0/16"
   azs                  = ["${var.aws_region}a", "${var.aws_region}b"]
   private_subnets      = ["10.0.1.0/24", "10.0.2.0/24"]
@@ -12,7 +12,7 @@ module "vpc" {
 
 
 resource "aws_security_group" "ecs" {
-  name   = "quetzal-ecs-sg"
+  name   = "quetzal-ecs-sg-${var.environment}"
   vpc_id = module.vpc.vpc_id
   tags   = var.tags
 

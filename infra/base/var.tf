@@ -4,6 +4,11 @@ variable "aws_region" {
   default     = "ca-central-1"
 }
 
+variable "environment" {
+  type = string
+}
+
+
 variable "dev" {
   description = "dev flag. used to set CORS."
   type        = bool

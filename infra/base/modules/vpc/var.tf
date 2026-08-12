@@ -9,3 +9,7 @@ variable "tags" {
   type        = map(any)
   default     = { "cost:project" = "quetzal" }
 }
+
+variable "environment" {
+  type = string
+}

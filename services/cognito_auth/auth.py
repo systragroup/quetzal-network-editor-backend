@@ -139,7 +139,6 @@ def checkAccessToBucket(claims, model: str):
 	# check if user has access to a bucket (model)
 	policies = get_user_policies(claims)
 	available_buckets = get_available_buckets(policies)
-	print(model, available_buckets)
 	if model in available_buckets:
 		print('Allowed')
 	else:
