@@ -1,5 +1,7 @@
+import json
 import os
 import sys
+
 import boto3
 
 # python update-S3-model-files.py quetzal_test base
@@ -7,6 +9,21 @@ import boto3
 # to base/ on s3.
 
 s3 = boto3.resource('s3')
+s3Client = boto3.client('s3')
+
+
+def upload_info(bucket, scenario):
+	import datetime
+
+	info = {
+		'description': '',
+		'model_tag': '',
+		'last_modified_date': datetime.datetime.now().isoformat(),
+		'last_modified_email': '',
+	}
+	key = f'{scenario}/info.json'
+	print('info', info)
+	s3Client.put_object(Bucket=bucket, Key=key, Body=json.dumps(info))
 
 
 def list_paths_in_directory(directory):
@@ -28,7 +45,6 @@ def main():
 		# Delete content
 		for obj in bucket.objects.filter(Prefix=scenario + '/'):
 			s3.Object(bucket.name, obj.key).delete()
-			pass
 
 		print(f'Updating {scenario} scenario')
 		localpath = 'scenarios/' + scenario + '/'
@@ -40,12 +56,13 @@ def main():
 			for file in files:
 				print('upload:', file)
 				bucket.upload_file(file, file[10:].replace(os.sep, '/'))
+		upload_info(bucket.name, scenario)
 
 
 if __name__ == '__main__':
 	if len(sys.argv) < 3:
 		print('Error: At least two argument is required.')
-		print('Usage: python {name} model_folder scenario1 [scenario2] ...'.format(name=sys.argv[0]))
+		print(f'Usage: python {sys.argv[0]} model_folder scenario1 [scenario2] ...')
 		sys.exit(1)
 
 	source = os.path.dirname(os.path.abspath(__file__))
