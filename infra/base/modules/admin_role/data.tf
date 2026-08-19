@@ -47,12 +47,12 @@ data "aws_iam_policy_document" "admin_s3_policy" {
     resources = ["arn:aws:s3:::quetzal-*/*"]
   }
   statement {
-    effect = "Deny"
-    actions = [
-      "s3:PutObject",
-      "s3:DeleteObject"
+    effect  = "Deny"
+    actions = ["*"]
+    resources = [
+      "arn:aws:s3:::quetzal-tf-state",
+      "arn:aws:s3:::quetzal-tf-state/*"
     ]
-    resources = ["arn:aws:s3:::quetzal-*/base/*"]
   }
 
 }
