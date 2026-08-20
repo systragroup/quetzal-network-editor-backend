@@ -1,3 +1,10 @@
+## [5.3.0] (2026-08-20)
+### changes
+* Change RunPayload. pass revision to chose a task-definition to run on ECS
+* @app.get('/run/{function_name}/{infra}/tags', response_model=list[Revision])
+    * change tag to tags. now return a list of {tag,revision}. so the front can choose. just 1 tag for lambda as its not possible to chose a different image to run.
+
+
 ## [5.2.0] (2026-08-11)
 ### changes
 * Change RunPayload. pass params directly instead of launcher args. we create launcher_arg = {'params': params, 'training_folder': '/tmp'} here

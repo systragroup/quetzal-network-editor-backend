@@ -65,6 +65,7 @@ class RunPayload(BaseModel):
 	metadata: dict = {}
 	steps: list[Step] = []  # for ECS
 	choice: str = ''  # for sfn
+	revision: str | None = None
 
 
 class PollPayload(BaseModel):
@@ -83,3 +84,8 @@ class DisplayStep(TypedDict):
 
 
 type DisplayStepsDict = dict[str, list[DisplayStep]]
+
+
+class Revision(BaseModel):
+	revision: str
+	tag: str

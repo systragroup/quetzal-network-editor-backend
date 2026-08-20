@@ -4,8 +4,9 @@ import os
 import boto3
 from dotenv import load_dotenv
 
+from .ecr import list_ecr_images_tag
 from .mappers import map_ecs_status
-from .models import DisplayStep, DisplayStepsDict, JobStatus, ModelStep
+from .models import DisplayStep, DisplayStepsDict, JobStatus, ModelStep, Revision
 
 load_dotenv()
 REGION = os.environ['REGION']
@@ -15,22 +16,33 @@ VPC_SECURITY_GROUP = os.environ['VPC_SECURITY_GROUP']
 
 ecs = boto3.client('ecs', region_name=REGION)
 s3 = boto3.client('s3', region_name=REGION)
+ecr = boto3.client('ecr')
 
 
 def get_cluster_name(function_name: str) -> str:
 	return f'arn:aws:ecs:{REGION}:{ACCOUNT}:cluster/{function_name}'
 
 
-def get_task_definition_name(function_name: str) -> str:
-	return f'arn:aws:ecs:{REGION}:{ACCOUNT}:task-definition/{function_name}-task'
+def get_task_definition_name(function_name: str, revision: str | None = None) -> str:
+	arn = f'arn:aws:ecs:{REGION}:{ACCOUNT}:task-definition/{function_name}-task'
+	if revision is not None:
+		arn += f':{revision}'
+	return arn
 
 
-def run_ecs(function_name: str, scenario_path: str, params: dict, steps: list, variants: list, metadata: dict) -> str:
+def run_ecs(
+	function_name: str,
+	scenario_path: str,
+	params: dict,
+	steps: list,
+	variants: list,
+	metadata: dict,
+	revision: str | None = None,
+) -> str:
 
 	launcher_arg = {'params': params, 'training_folder': '/tmp'}
-
 	cluster = get_cluster_name(function_name)
-	task_definition = get_task_definition_name(function_name)
+	task_definition = get_task_definition_name(function_name, revision)
 	response = ecs.run_task(
 		cluster=cluster,
 		launchType='FARGATE',
@@ -116,6 +128,7 @@ def get_running_ecs_task(function_name: str, scenario: str) -> str:
 
 
 def list_tasks_revisions(function_name: str) -> list[str]:
+	# return tasks arn. order with latest as first
 	definition_name = f'{function_name}-task'
 	response = ecs.list_task_definitions(
 		familyPrefix=definition_name,
@@ -124,20 +137,20 @@ def list_tasks_revisions(function_name: str) -> list[str]:
 	return response['taskDefinitionArns']
 
 
-def get_image_tag(function_name: str) -> str:
-	# get tag of first image: TODO: change if more docker per tasks in the future.
-	# task_definition = get_task_definition_name(function_name)
-	# task_def = ecs.describe_task_definition(taskDefinition=task_definition)['taskDefinition']
-	tags = []  # TODO: can return a list of {revisionARN, imageTag} for front to chose. now only return latest tag
+def list_images_tag(function_name: str) -> list[Revision]:
+	# list all revisions and get all the unique tags. keep only images available on ECR
+	# tags in Descending order (latest is first in list)
+	results = []
 	revision_list = list_tasks_revisions(function_name)
+	available_images = set(list_ecr_images_tag(function_name))
 	for revision in revision_list:
+		rev_number = revision.split(':')[-1]
 		task_def = ecs.describe_task_definition(taskDefinition=revision)['taskDefinition']
 		container = task_def['containerDefinitions'][0]
 		tag = container['image'].split(':')[-1]
-		tags.append(tag)
-		break
-
-	return tags[0]
+		if tag in available_images:
+			results.append({'revision': rev_number, 'tag': tag})
+	return results
 
 
 def get_ecs_bucket(function_name: str) -> str:

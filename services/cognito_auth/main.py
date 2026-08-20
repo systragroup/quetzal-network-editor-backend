@@ -7,18 +7,17 @@ from fastapi import FastAPI, Header, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from mangum import Mangum
 from middlewares.exception import ExceptionHandlerMiddleware
-from pydantic import BaseModel
 from run.ecs import (
 	get_ecs_bucket,
 	get_ecs_status,
 	get_ecs_steps,
-	get_image_tag,
 	get_running_ecs_task,
+	list_images_tag,
 	list_tasks_revisions,
 	run_ecs,
 	stop_ecs_task,
 )
-from run.models import DisplayStepsDict, Infra, PollPayload, RunPayload, Status, StopPayload
+from run.models import DisplayStepsDict, Infra, PollPayload, Revision, RunPayload, Status, StopPayload
 from run.step_status import StepStatus, StepStatusController
 from run.stepfunctions import (
 	get_lambda_bucket,
@@ -36,20 +35,9 @@ from users.cognito import (
 	list_group_users,
 	set_user_password,
 )
+from users.models import User, Username
 
 type AuthHeader = Annotated[str, Header()]
-
-
-class User(BaseModel):
-	username: str
-	given_name: str | None = None
-	family_name: str | None = None
-	email: str | None = None
-	password: str
-
-
-class Username(BaseModel):
-	username: str
 
 
 pyproject = toml.load('pyproject.toml')
@@ -176,13 +164,13 @@ def get_infra(function_name: str):
 		return 'lambda'
 
 
-@app.get('/run/{function_name}/{infra}/tag')
+@app.get('/run/{function_name}/{infra}/tags', response_model=list[Revision])
 def get_ecs_task_image_tag(function_name: str, infra: Infra, Authorization: AuthHeader):
 	auth(Authorization)
 	if on_ecs(infra):
-		return get_image_tag(function_name)
+		return list_images_tag(function_name)
 	else:
-		return get_lambda_image_tag(function_name)
+		return [Revision(revision='', tag=get_lambda_image_tag(function_name))]
 
 
 # get steps
@@ -214,6 +202,7 @@ def run_task(function_name: str, infra: Infra, payload: RunPayload, Authorizatio
 			steps=payload.steps,
 			variants=payload.variants,
 			metadata=payload.metadata,
+			revision=payload.revision,
 		)
 		# init step_status to new run
 		step_status = StepStatusController(
