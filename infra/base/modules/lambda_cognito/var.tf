@@ -19,6 +19,10 @@ variable "region" {
   description = "aws region"
   type        = string
 }
+variable "account_id" {
+  description = "aws region"
+  type        = string
+}
 variable "app_client_id" {
   description = "aws cognito pool app client id"
   type        = string

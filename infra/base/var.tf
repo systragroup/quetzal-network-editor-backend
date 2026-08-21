@@ -4,6 +4,12 @@ variable "aws_region" {
   default     = "ca-central-1"
 }
 
+
+variable "account_id" {
+  description = "set in env.tfvars. account id"
+  type        = string
+  default     = ""
+}
 variable "environment" {
   type = string
 }

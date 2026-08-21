@@ -1,6 +1,4 @@
 
-data "aws_caller_identity" "current" {}
-data "aws_region" "current" {} # data.aws_region.current.name
 data "aws_ecr_image" "latest" {
   repository_name = var.ecr_repo_name
   most_recent     = true
@@ -26,7 +24,7 @@ data "aws_iam_policy_document" "lambda_logging" {
     effect  = "Allow"
     actions = ["logs:CreateLogGroup"]
     resources = [
-      "arn:aws:logs:${data.aws_region.current.region}:${data.aws_caller_identity.current.account_id}:*"
+      "arn:aws:logs:${var.region}:${var.account_id}:*"
     ]
   }
   statement {
@@ -99,7 +97,7 @@ data "aws_iam_policy_document" "cognito_policy" {
   statement {
     effect    = "Allow"
     actions   = ["cognito-idp:*"]
-    resources = ["arn:aws:cognito-idp:*:142023388927:userpool/*"]
+    resources = ["arn:aws:cognito-idp:*:${var.account_id}:userpool/*"]
   }
 }
 
@@ -129,7 +127,7 @@ data "aws_iam_policy_document" "lambda_policy" {
       "lambda:GetFunctionConfiguration",
       "lambda:GetFunction"
     ]
-    resources = ["*"]
+    resources = ["arn:aws:lambda:${var.region}:${var.account_id}:function:quetzal-*"]
   }
 }
 
@@ -141,16 +139,19 @@ data "aws_iam_policy_document" "s3_policy" {
     actions = [
       "s3:GetObject",
       "s3:PutObject",
-      "s3:ListBucket"
     ]
-    resources = ["*"]
+    resources = ["arn:aws:s3:::quetzal-*/*"]
+  }
+  statement {
+    effect    = "Allow"
+    actions   = ["s3:ListBucket"]
+    resources = ["arn:aws:s3:::quetzal-*"]
   }
   statement {
     effect    = "Allow"
     actions   = ["s3:ListAllMyBuckets"]
     resources = ["*"]
   }
-
 }
 
 
@@ -177,5 +178,25 @@ data "aws_iam_policy_document" "ecs_policy" {
 
     ]
     resources = ["*"]
+
   }
 }
+
+
+data "aws_iam_policy_document" "ecr_policy" {
+  version = "2012-10-17"
+
+  statement {
+    effect = "Allow"
+
+    actions = [
+      "ecr:ListImages",
+    ]
+
+    resources = [
+      "arn:aws:ecr:${var.region}:${var.account_id}:repository/quetzal-*"
+    ]
+  }
+}
+
+

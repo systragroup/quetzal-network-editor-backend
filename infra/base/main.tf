@@ -51,6 +51,7 @@ module "lambda-cognito" {
   function_name  = var.cognito_api_name
   ecr_repo_name  = var.cognito_api_name
   region         = var.aws_region
+  account_id     = var.account_id
   app_client_id  = var.app_client_id
   user_pool_id   = var.user_pool_id
   role_name      = "lambda-${var.cognito_api_name}-role"

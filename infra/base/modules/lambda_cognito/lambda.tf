@@ -68,6 +68,12 @@ resource "aws_iam_role_policy" "s3_policy" {
   policy = data.aws_iam_policy_document.s3_policy.json
 }
 
+# 11) create inline policy with ecs access
+resource "aws_iam_role_policy" "ecr_policy" {
+  name   = "ECR_ADMIN_${var.function_name}"
+  role   = aws_iam_role.iam_for_lambda.name
+  policy = data.aws_iam_policy_document.ecr_policy.json
+}
 
 # 6) create the Lambda function with dummy image from ECR
 resource "aws_lambda_function" "cognito_lambda" {
@@ -78,7 +84,7 @@ resource "aws_lambda_function" "cognito_lambda" {
   role          = aws_iam_role.iam_for_lambda.arn
   architectures = ["x86_64"]
   package_type  = "Image"
-  image_uri     = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${data.aws_region.current.region}.amazonaws.com/${var.ecr_repo_name}:${data.aws_ecr_image.latest.image_tags[0]}"
+  image_uri     = "${var.account_id}.dkr.ecr.${var.region}.amazonaws.com/${var.ecr_repo_name}:${data.aws_ecr_image.latest.image_tags[0]}"
 
   memory_size = var.memory_size
   timeout     = var.time_limit
@@ -90,7 +96,7 @@ resource "aws_lambda_function" "cognito_lambda" {
       APP_CLIENT_ID      = var.app_client_id,
       REGION             = var.region
       USER_POOL_ID       = var.user_pool_id
-      ACCOUNT_ID         = data.aws_caller_identity.current.account_id
+      ACCOUNT_ID         = var.account_id
       VPC_SUBNET         = var.subnet
       VPC_SECURITY_GROUP = var.security_group
       DEV                = var.dev
