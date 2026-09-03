@@ -56,9 +56,9 @@ resource "aws_ecs_task_definition" "model" {
 
   container_definitions = jsonencode([
     {
-      name  = "${var.function_name}"
-      image = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${data.aws_region.current.region}.amazonaws.com/${var.ecr_repo_name}:${data.aws_ecr_image.latest.image_tags[0]}"
-
+      name      = "${var.function_name}"
+      image     = "${data.aws_caller_identity.current.account_id}.dkr.ecr.${data.aws_region.current.region}.amazonaws.com/${var.ecr_repo_name}:${data.aws_ecr_image.latest.image_tags[0]}"
+      tags      = var.tags
       essential = true
 
       environment = [
