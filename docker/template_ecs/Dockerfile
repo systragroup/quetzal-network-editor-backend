@@ -4,6 +4,8 @@ FROM amazonlinux:2 AS build
 FROM python:3.12 AS runtime
 COPY --from=build /usr/lib64/libexpat.so.1 /lib64/
 
+WORKDIR /app
+
 # docker env variable inject in build
 ARG QUETZAL_MODEL_NAME
 ENV QUETZAL_MODEL_NAME=$QUETZAL_MODEL_NAME

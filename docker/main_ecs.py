@@ -1,13 +1,13 @@
-import sys
-import os
 import json
-import boto3
+import os
 import shutil
 import signal
+import sys
 import time
-from typing import Dict
-from subprocess import Popen, PIPE, STDOUT
 from pathlib import Path
+from subprocess import PIPE, STDOUT, Popen, TimeoutExpired
+
+import boto3
 
 
 class StatusController:
@@ -36,19 +36,24 @@ class S3Controller:
 		self.bucket_name = bucket_name
 		self.scenario = scenario
 		self.metadata = metadata
-		self.local_dir = '/tmp'
+		self.local_dir = '/app'
 
 	def download_folder(self):
-		_download_s3_folder(self.bucket_name, self.scenario, self.local_dir)
+		_download_s3_folder(self.bucket_name, self.scenario, local_dir=self.local_dir)
 
-	def upload_folder(self):
-		_upload_s3_folder(self.bucket_name, self.scenario, self.local_dir, self.metadata)
+	def upload_folder(self, folder):
+		_upload_s3_folder(
+			self.bucket_name,
+			self.scenario,
+			folder=os.path.join('/app', folder),
+			metadata=self.metadata,
+		)
 
 	def upload_logs(self, name: str, body: str):
 		_upload_logs_to_s3(self.bucket_name, self.scenario, name, body, self.metadata)
 
 
-def _download_s3_folder(bucket_name, s3_folder, local_dir='/tmp'):
+def _download_s3_folder(bucket_name, s3_folder, local_dir='/app'):
 	"""
 	Download the contents of a folder directory
 	Args:
@@ -67,7 +72,7 @@ def _download_s3_folder(bucket_name, s3_folder, local_dir='/tmp'):
 		bucket.download_file(obj.key, target)
 
 
-def _upload_s3_folder(bucket_name, prefix, local_dir='/tmp', metadata={}):
+def _upload_s3_folder(bucket_name, prefix, folder='/app', metadata={}):
 	"""
 	Upload the contents of a folder directory to S3
 	Args:
@@ -77,12 +82,12 @@ def _upload_s3_folder(bucket_name, prefix, local_dir='/tmp', metadata={}):
 	"""
 	s3 = boto3.resource('s3')
 	bucket = s3.Bucket(bucket_name)  # type: ignore
-	for root, _, files in os.walk(local_dir):
+	for root, _, files in os.walk(folder):
 		for file in files:
 			local_path = os.path.join(root, file)
 			folder = ''
-			if root != local_dir:  # if not. return '.' and the os.path.join send root files to ./
-				folder = os.path.relpath(root, local_dir)
+			if root != folder:  # if not. return '.' and the os.path.join send root files to ./
+				folder = os.path.relpath(root, folder)
 			s3_path = os.path.join(prefix, folder, file)
 			bucket.upload_file(local_path, s3_path, ExtraArgs={'Metadata': metadata})
 
@@ -122,26 +127,29 @@ def format_error(err):
 		return part[0]
 
 
-def orcherstrator():
+def orchestrator():
 	kwargs = os.environ
 	steps = json.loads(kwargs['steps'])
 	bucket_name = kwargs['BUCKET_NAME']
 	scenario_path = kwargs.get('scenario_path', '')
 	launcher_arg = kwargs['launcher_arg']
 
+	launcher_arg = json.loads(kwargs['launcher_arg'])
+	training_folder = launcher_arg.pop('training_folder', None)
+
 	metadata = json.loads(kwargs.get('metadata', '{}'))
 
-	os.environ['MPLCONFIGDIR'] = '/tmp/matplotlib-cache'
+	# os.environ['MPLCONFIGDIR'] = '/tmp/matplotlib-cache'
 	status = StatusController(bucket_name, scenario_path, metadata)
 	storage = S3Controller(bucket_name=bucket_name, scenario=scenario_path, metadata=metadata)
 
 	# Move (and download) model data and inputs to ephemeral storage
 	t0 = time.time()
-	clean_folder()  # Clean ephemeral storage
-	if os.path.exists('/inputs'):  # move docker inputs/ folder
-		shutil.move('./inputs', '/tmp/inputs')
+	# clean_folder()  # Clean ephemeral storage
+	# if os.path.exists('/inputs'):  # move docker inputs/ folder
+	# 	shutil.move('./inputs', '/tmp/inputs')
 	storage.download_folder()
-	print('Download inputs: {} seconds'.format(time.time() - t0))
+	print(f'Download inputs: {time.time() - t0} seconds')
 	t1 = time.time()
 
 	# run
@@ -158,77 +166,89 @@ def orcherstrator():
 
 	t2 = time.time()
 
-	print('steps total time: {} seconds'.format(t2 - t1))
+	print(f'steps total time: {t2 - t1} seconds')
 
 	# upload files to S3)
-	if os.path.exists('/tmp/inputs'):  # except inputs
-		shutil.rmtree('/tmp/inputs')
+	if os.path.exists('/app/inputs'):  # except inputs
+		shutil.rmtree('/app/inputs')
 
 	# Write model version in info.json
 	image_tag = os.environ.get('IMAGE_TAG', None)
 	if image_tag:
-		path = Path('/tmp/info.json')
+		path = Path('/app/info.json')
 		data = json.loads(path.read_text()) if path.exists() else {}
 		data['model_tag'] = image_tag
 		path.write_text(json.dumps(data, indent=2))
 
-	storage.upload_folder()
+	storage.upload_folder(folder='outputs/')
 
 	t3 = time.time()
-	print('Upload to S3: {} seconds'.format(t3 - t2))
+	print(f'Upload to S3: {t3 - t2} seconds')
 
-	print('total execution time: {} seconds'.format(t3 - t0))
+	print(f'total execution time: {t3 - t0} seconds')
 
 
 def run_step(notebook: str, launcher_arg: str, storage: S3Controller):
 	t1 = time.time()
 	print(launcher_arg)
 
-	pyfile = os.path.join('/tmp', os.path.basename(notebook).replace('.ipynb', '.py'))
+	pyfile = notebook.replace('.ipynb', '.py')
+
+	print(notebook)
+	print(pyfile)
+
 	if notebook.endswith('.ipynb'):
-		os.system('jupyter nbconvert --to python %s --output %s' % (notebook, pyfile))
-	else:
-		os.system('cp %s %s' % (notebook, pyfile))
-	cwd = os.path.dirname(notebook)
-	if cwd == '':
-		cwd = '/'
-	command_list = ['python', pyfile, launcher_arg]
+		os.system('jupyter nbconvert --to python %s' % (notebook))
+
+	command_list = ['python', os.path.basename(pyfile), json.dumps(launcher_arg)]
 	my_env = os.environ.copy()
 	my_env['PYTHONPATH'] = os.pathsep.join(sys.path)
 
 	t2 = time.time()
-	print('Notebook conversion: {} seconds'.format(t2 - t1))
+	print(f'Notebook conversion: {t2 - t1} seconds')
 
-	process = Popen(command_list, stdout=PIPE, stderr=STDOUT, env=my_env, cwd=cwd)
-	process.wait()
+	print('Command', command_list)
 
-	stdout = process.stdout.read().decode('utf-8')  # type: ignore
+	process = Popen(command_list, stdout=PIPE, stderr=STDOUT, env=my_env, cwd=os.path.dirname(pyfile))
+
+	try:
+		stdout_bytes, _ = process.communicate(timeout=None)
+
+	except TimeoutExpired:
+		print('Process timed out. Killing process group...')
+		process.kill()
+
+		stdout_bytes, _ = process.communicate()
+		stdout = stdout_bytes.decode('utf-8', errors='replace')
+
+		logfile = os.path.basename(pyfile).replace('.py', '.txt')
+		storage.upload_logs(logfile, stdout)
+		raise TimeoutError('Notebook execution exceeded timeout')
+
+	stdout = stdout_bytes.decode('utf-8', errors='replace')
 
 	logfile = os.path.basename(pyfile).replace('.py', '.txt')
 	storage.upload_logs(logfile, stdout)
 	# clean
-	os.remove(pyfile)
-	if os.path.exists('/tmp/logs'):
-		shutil.rmtree('/tmp/logs')
+	# os.remove(pyfile)
+	if os.path.exists('/app/logs'):
+		shutil.rmtree('/app/logs')
 
 	t3 = time.time()
-	print('Notebook execution: {} seconds'.format(t3 - t2))
+	print(f'Notebook execution: {t3 - t2} seconds')
 
 	print(stdout)
 	# parse error. if return_code!=0 (there is an error)
 	# doule check for [ERROR]. also: do not throw error for end_of_notebook
-	if process.returncode != 0:
-		if 'end_of_notebook' not in stdout:
-			raise RuntimeError(format_error(stdout))
+	if process.returncode != 0 and 'end_of_notebook' not in stdout:
+		raise RuntimeError(format_error(stdout))
 
 	# TODO: add those to the env_variable for next step.
 	# if notebook return some args. add them
 	# event = get_return_args(event, content)
 
-	return None
 
-
-def deep_update(mapping: Dict, *updating_mappings) -> Dict:
+def deep_update(mapping: dict, *updating_mappings) -> dict:
 	# update a nested dict
 	# (from Pydantic) https://github.com/pydantic/pydantic/blob/fd2991fe6a73819b48c906e3c3274e8e47d0f761/pydantic/utils.py#L200
 	updated_mapping = mapping.copy()
@@ -271,4 +291,4 @@ def start_timeout():
 if __name__ == '__main__':
 	print('env', os.environ)
 	start_timeout()
-	orcherstrator()
+	orchestrator()

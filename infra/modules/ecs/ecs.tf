@@ -35,6 +35,11 @@ resource "aws_cloudwatch_log_group" "ecs" {
 resource "aws_ecs_cluster" "main" {
   name = var.function_name
   tags = var.tags
+
+  setting {
+    name  = "containerInsights"
+    value = "disabled"
+  }
 }
 
 
