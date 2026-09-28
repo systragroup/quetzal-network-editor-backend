@@ -3,9 +3,5 @@ __pycache__
 *.python-version
 *.md
 *.env
-syspy/surveys
 .venv
-wheels-cp38-win_amd64
-quetzal/.git/lfs
-quetzal/.git/objects
 quetzal-network-editor/services/MapMatching/scenarios/
