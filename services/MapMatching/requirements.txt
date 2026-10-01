@@ -1,1 +1,1 @@
-quetzal-transport==3.9.1
+quetzal-transport==3.9.2
